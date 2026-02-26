@@ -129,6 +129,15 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
+  /* Hide scrollbar utility */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   /**
   * Default typography styles for HTML elements (h1-h4, p, label, button, input).
   * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
@@ -162,20 +171,8 @@
     line-height: 1.5;
   }
 
-  label {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  button {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  input {
-    font-size: var(--text-base);
+  p, label, button, input, textarea, select {
+    font-size: var(--text-sm);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
   }

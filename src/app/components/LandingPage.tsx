@@ -670,7 +670,13 @@ export function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border/50 bg-white px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="mx-auto max-w-7xl"
+        >
           <div className="grid gap-8 md:grid-cols-4">
             <div>
               <div className="mb-4 flex items-center gap-2">
@@ -713,7 +719,7 @@ export function LandingPage() {
           <div className="mt-10 border-t border-border/50 pt-6 text-center text-[0.8125rem] text-muted-foreground">
             &copy; 2026 Lifenix AI. All rights reserved. | 技术栈: Vite + React 前端 / Java 后端
           </div>
-        </div>
+        </motion.div>
       </footer>
     </div>
   );

@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate, useOutletContext } from "react-router";
 import { useAuth } from "./AuthContext";
 import { Button } from "./ui/button";
 import {
   Sparkles,
-  LayoutDashboard,
   ListTodo,
   CalendarDays,
   MessageSquare,
@@ -15,26 +14,28 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  X,
   Bell,
   Search,
   Crown,
+  X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { DynamicBackground } from "./DynamicBackground";
+import { SearchModal } from "./SearchModal";
+import { NotificationPanel } from "./NotificationPanel";
+import { AIChatDrawer } from "./AIChatDrawer";
 
-export type DashboardTab = "tasks" | "calendar" | "chat" | "stats";
+export type DashboardTab = "tasks" | "calendar" | "stats" | "settings" | "help";
 
 const navItems = [
-  { key: "tasks" as DashboardTab, label: "任务管理", icon: ListTodo },
-  { key: "calendar" as DashboardTab, label: "日程日历", icon: CalendarDays },
-  { key: "chat" as DashboardTab, label: "AI 助手", icon: MessageSquare },
+  { key: "tasks" as DashboardTab, label: "任务日程", icon: ListTodo },
+  { key: "calendar" as DashboardTab, label: "日程规划", icon: CalendarDays },
   { key: "stats" as DashboardTab, label: "数据统计", icon: BarChart3 },
 ];
 
 const bottomItems = [
-  { key: "help", label: "帮助中心", icon: HelpCircle },
-  { key: "settings", label: "设置", icon: Settings },
+  { key: "help" as DashboardTab, label: "帮助中心", icon: HelpCircle },
+  { key: "settings" as DashboardTab, label: "设置", icon: Settings },
 ];
 
 export function AppLayout() {
@@ -43,6 +44,30 @@ export function AppLayout() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+
+  // Keyboard shortcut for search
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
+
+  // Close mobile sidebar on resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setMobileOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Derive activeTab from URL search params
   const params = new URLSearchParams(location.search);
@@ -70,7 +95,7 @@ export function AppLayout() {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="flex h-16 items-center gap-2.5 border-b border-border/50 px-4">
+      <div className="flex h-14 items-center gap-2.5 border-b border-border/50 px-4 md:h-16">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary shadow-sm shadow-primary/20">
             <Sparkles className="h-5 w-5 text-white" />
@@ -86,6 +111,13 @@ export function AppLayout() {
             </motion.span>
           )}
         </Link>
+        {/* Mobile close button */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="ml-auto rounded-lg p-1.5 text-muted-foreground hover:bg-muted/60 md:hidden"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Main Nav */}
@@ -115,6 +147,35 @@ export function AppLayout() {
           })}
         </div>
 
+        {/* AI Assistant button in sidebar */}
+        <div className="mt-4 border-t border-border/30 pt-4">
+          {!collapsed && (
+            <div className="mb-1.5 px-3 text-[0.6875rem] text-muted-foreground/60 uppercase tracking-wider" style={{ fontWeight: 600 }}>
+              工具
+            </div>
+          )}
+          <button
+            onClick={() => setChatOpen(!chatOpen)}
+            className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-[0.875rem] ${
+              chatOpen
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            }`}
+            style={{ fontWeight: chatOpen ? 600 : 400 }}
+            title={collapsed ? "AI 助手" : undefined}
+          >
+            <MessageSquare className={`h-[1.125rem] w-[1.125rem] shrink-0 ${chatOpen ? "text-primary" : ""}`} />
+            {!collapsed && <span className="whitespace-nowrap">AI 助手</span>}
+            {!collapsed && (
+              <div className={`ml-auto flex h-5 min-w-5 items-center justify-center rounded-full text-[0.625rem] transition-colors ${
+                chatOpen ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+              }`} style={{ fontWeight: 600 }}>
+                {chatOpen ? "开" : "关"}
+              </div>
+            )}
+          </button>
+        </div>
+
         {/* Upgrade card */}
         {!collapsed && (
           <div className="mt-6 rounded-xl bg-gradient-to-br from-primary/10 via-purple-50 to-pink-50 p-4">
@@ -137,16 +198,25 @@ export function AppLayout() {
       {/* Bottom items */}
       <div className="border-t border-border/50 px-3 py-3">
         <div className="space-y-1">
-          {bottomItems.map((item) => (
-            <button
-              key={item.key}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[0.8125rem] text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground"
-              title={collapsed ? item.label : undefined}
-            >
-              <item.icon className="h-[1.125rem] w-[1.125rem] shrink-0" />
-              {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
-            </button>
-          ))}
+          {bottomItems.map((item) => {
+            const isActive = activeTab === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => setActiveTab(item.key)}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[0.8125rem] transition-all ${
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                }`}
+                style={{ fontWeight: isActive ? 600 : 400 }}
+                title={collapsed ? item.label : undefined}
+              >
+                <item.icon className={`h-[1.125rem] w-[1.125rem] shrink-0 ${isActive ? "text-primary" : ""}`} />
+                {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
+              </button>
+            );
+          })}
         </div>
 
         {/* User info */}
@@ -177,6 +247,7 @@ export function AppLayout() {
   return (
     <div className="flex h-screen overflow-hidden">
       <DynamicBackground variant="dashboard" />
+
       {/* Desktop Sidebar */}
       <aside
         className={`relative hidden md:flex flex-col border-r border-border/50 bg-white/90 backdrop-blur-sm transition-all duration-300 ${
@@ -220,35 +291,62 @@ export function AppLayout() {
         )}
       </AnimatePresence>
 
-      {/* Main area */}
+      {/* Main area + inline AI panel */}
       <div className="relative flex flex-1 flex-col overflow-hidden" style={{ zIndex: 1 }}>
         {/* Top bar */}
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/50 bg-white/80 backdrop-blur-xl px-4 sm:px-6">
-          <div className="flex items-center gap-3">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/50 bg-white/80 backdrop-blur-xl px-3 sm:h-16 sm:px-6">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
-              className="rounded-lg p-2 hover:bg-muted/60 transition-colors md:hidden"
+              className="rounded-lg p-2 hover:bg-muted/60 transition-colors md:hidden shrink-0"
               onClick={() => setMobileOpen(true)}
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div>
-              <h1 className="text-[1rem] tracking-tight" style={{ fontWeight: 600 }}>
+            <div className="min-w-0">
+              <h1 className="text-[0.875rem] sm:text-[1rem] tracking-tight truncate" style={{ fontWeight: 600 }}>
                 {getGreeting()}，{user?.name || "用户"}
               </h1>
-              <p className="text-[0.75rem] text-muted-foreground">
+              <p className="text-[0.6875rem] sm:text-[0.75rem] text-muted-foreground truncate">
                 {new Date().toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" })}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
+              title="搜索 (⌘K)"
+            >
               <Search className="h-[1.125rem] w-[1.125rem]" />
             </button>
-            <button className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors">
-              <Bell className="h-[1.125rem] w-[1.125rem]" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive" />
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen(!notifOpen)}
+                className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
+              >
+                <Bell className="h-[1.125rem] w-[1.125rem]" />
+                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive" />
+              </button>
+              <NotificationPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
+            </div>
+
+            {/* AI toggle button */}
+            <button
+              onClick={() => setChatOpen(!chatOpen)}
+              className={`relative rounded-lg p-2 transition-colors ${
+                chatOpen
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              }`}
+              title="AI 助手"
+            >
+              <MessageSquare className="h-[1.125rem] w-[1.125rem]" />
+              <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary">
+                <Sparkles className="h-2 w-2 text-white" />
+              </span>
             </button>
+
             <div className="ml-1 hidden items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 sm:flex">
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[0.6875rem] text-white" style={{ fontWeight: 600 }}>
                 {user?.name?.charAt(0).toUpperCase() || "U"}
@@ -260,11 +358,24 @@ export function AppLayout() {
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
-          <Outlet context={{ activeTab, setActiveTab } satisfies AppOutletContext} />
-        </main>
+        {/* Content row: main + AI panel side by side */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Page content */}
+          <main className="flex-1 overflow-y-auto">
+            <Outlet context={{ activeTab, setActiveTab } satisfies AppOutletContext} />
+          </main>
+
+          {/* AI Chat — inline on desktop, overlay on mobile */}
+          <AIChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />
+        </div>
       </div>
+
+      {/* Search Modal */}
+      <SearchModal
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onNavigate={(tab) => setActiveTab(tab as DashboardTab)}
+      />
     </div>
   );
 }

@@ -142,8 +142,9 @@ export function PricingPage() {
               key={plan.name}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -4, scale: 1.01 }}
               transition={{ delay: i * 0.1 }}
-              className={`relative overflow-hidden rounded-2xl border ${plan.borderColor} ${plan.bgColor} p-7 transition-all hover:shadow-lg`}
+              className={`relative overflow-hidden rounded-2xl border ${plan.borderColor} ${plan.bgColor} p-7 transition-shadow hover:shadow-lg`}
             >
               {plan.popular && (
                 <div className="absolute top-0 right-0 rounded-bl-xl bg-primary px-4 py-1.5 text-[0.75rem] text-white" style={{ fontWeight: 600 }}>
