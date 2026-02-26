@@ -41,7 +41,11 @@ import {
   Shield,
   Eye,
   EyeOff,
+  Calendar,
+  ClipboardList,
 } from "lucide-react";
+import { CircleSchedule } from "./CircleSchedule";
+import { CircleTasks } from "./CircleTasks";
 
 /* ═══════════════ Types ═══════════════ */
 interface Member {
@@ -91,7 +95,7 @@ interface Circle {
   aiEnabled: boolean;
 }
 
-type CircleView = "chat" | "memory" | "members";
+type CircleView = "chat" | "tasks" | "schedule" | "memory" | "members";
 
 /* ═══════════════ Mock Data ═══════════════ */
 const memoryCategories = [
@@ -418,6 +422,8 @@ export function CirclesPage() {
 
   const viewTabs = [
     { key: "chat" as CircleView, label: "群聊", icon: MessageSquare },
+    { key: "tasks" as CircleView, label: "任务", icon: ClipboardList },
+    { key: "schedule" as CircleView, label: "日程", icon: Calendar },
     { key: "memory" as CircleView, label: "知识库", icon: Brain },
     { key: "members" as CircleView, label: "成员", icon: Users },
   ];
@@ -574,7 +580,7 @@ export function CirclesPage() {
                     </h2>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[0.6875rem] text-muted-foreground">
-                        {selectedCircle.members.length} 位成员 · {selectedCircle.memories.length} 条知识
+                        {selectedCircle.members.length} 位成员 · {selectedCircle.memories.length} 条知识 · 日程协作
                       </span>
                       {selectedCircle.aiEnabled && (
                         <Badge className="bg-primary/10 text-primary hover:bg-primary/10 text-[0.5625rem] px-1.5 py-0 h-4">
@@ -597,7 +603,7 @@ export function CirclesPage() {
               </div>
 
               {/* View Tabs */}
-              <div className="mt-2 flex gap-0.5 rounded-xl bg-muted/40 p-0.5 sm:p-1 max-w-xs">
+              <div className="mt-2 flex gap-0.5 rounded-xl bg-muted/40 p-0.5 sm:p-1 max-w-md">
                 {viewTabs.map((tab) => (
                   <button
                     key={tab.key}
@@ -776,6 +782,41 @@ export function CirclesPage() {
                         </Button>
                       </div>
                     </div>
+                  </motion.div>
+                )}
+
+                {/* ── Tasks View ── */}
+                {circleView === "tasks" && (
+                  <motion.div
+                    key="tasks"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="h-full"
+                  >
+                    <CircleTasks
+                      members={selectedCircle.members}
+                      circleName={selectedCircle.name}
+                      circleType={selectedCircle.type}
+                    />
+                  </motion.div>
+                )}
+
+                {/* ── Schedule View ── */}
+                {circleView === "schedule" && (
+                  <motion.div
+                    key="schedule"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="h-full"
+                  >
+                    <CircleSchedule
+                      members={selectedCircle.members}
+                      circleName={selectedCircle.name}
+                    />
                   </motion.div>
                 )}
 
