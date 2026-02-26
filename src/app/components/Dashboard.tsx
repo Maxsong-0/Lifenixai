@@ -1,7 +1,5 @@
-import { CalendarPage } from "./CalendarPage";
-import { FragmentParser } from "./FragmentParser";
-import { CirclesPage } from "./CirclesPage";
 import { AddTaskModal, AISettingsPanel } from "./AddTaskModal";
+import { FocusPanel } from "./FocusPanel";
 import type { NewTaskData } from "./AddTaskModal";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
@@ -373,6 +371,13 @@ export function Dashboard() {
                   </div>
                 </div>
               </motion.div>
+            </motion.div>
+          )}
+
+          {/* ═══════════════ FOCUS ═══════════════ */}
+          {activeTab === "focus" && (
+            <motion.div key="focus" variants={panelVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.35, ease: "easeOut" }}>
+              <FocusPanel />
             </motion.div>
           )}
 

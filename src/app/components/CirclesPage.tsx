@@ -17,7 +17,7 @@ import {
   Crown,
   UserPlus,
   Trash2,
-  Edit3,
+  Pencil,
   Hash,
   BookOpen,
   Lightbulb,

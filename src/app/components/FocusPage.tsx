@@ -41,6 +41,15 @@ import {
   SkipForward,
   Sprout,
   Flower2,
+  Link2,
+  Trash2,
+  Pencil,
+  CalendarClock,
+  Bell,
+  Youtube,
+  Music2,
+  Tv,
+  Globe,
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════
@@ -82,6 +91,75 @@ interface UnblockMessage {
   id: string;
   role: "user" | "ai";
   content: string;
+}
+
+interface ScheduleEvent {
+  id: string;
+  title: string;
+  startTime: Date;
+  type: "meeting" | "task" | "reminder";
+}
+
+type MediaType = "youtube" | "spotify" | "apple-music" | "video" | "audio" | "unknown" | null;
+
+function detectMediaType(url: string): MediaType {
+  if (!url.trim()) return null;
+  const u = url.toLowerCase();
+  if (u.includes("youtube.com/watch") || u.includes("youtu.be/") || u.includes("youtube.com/embed")) return "youtube";
+  if (u.includes("open.spotify.com") || u.includes("spotify.com")) return "spotify";
+  if (u.includes("music.apple.com")) return "apple-music";
+  if (/\.(mp4|webm|ogg|mov)(\?|$)/i.test(u)) return "video";
+  if (/\.(mp3|wav|flac|aac|m4a)(\?|$)/i.test(u)) return "audio";
+  // Treat other URLs as generic embeddable
+  if (u.startsWith("http")) return "unknown";
+  return null;
+}
+
+function getYouTubeId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+function getSpotifyEmbedUrl(url: string): string | null {
+  // https://open.spotify.com/track/xxx → https://open.spotify.com/embed/track/xxx
+  const m = url.match(/open\.spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/);
+  if (m) return `https://open.spotify.com/embed/${m[1]}/${m[2]}?theme=0`;
+  return null;
+}
+
+function getAppleMusicEmbedUrl(url: string): string | null {
+  // https://music.apple.com/us/album/xxx/123?i=456 → https://embed.music.apple.com/us/album/xxx/123?i=456
+  try {
+    const u = new URL(url);
+    return `https://embed.music.apple.com${u.pathname}${u.search}`;
+  } catch {
+    return null;
+  }
+}
+
+/* Mock upcoming schedule events */
+function getMockUpcomingEvents(): ScheduleEvent[] {
+  const now = new Date();
+  return [
+    {
+      id: "evt1",
+      title: "团队周会",
+      startTime: new Date(now.getTime() + 15 * 60 * 1000), // 15 min later
+      type: "meeting",
+    },
+    {
+      id: "evt2",
+      title: "提交项目报告",
+      startTime: new Date(now.getTime() + 45 * 60 * 1000), // 45 min later
+      type: "task",
+    },
+    {
+      id: "evt3",
+      title: "下午茶时间",
+      startTime: new Date(now.getTime() + 90 * 60 * 1000), // 90 min later
+      type: "reminder",
+    },
+  ];
 }
 
 const STORAGE_KEY = "lifenix_focus_sessions";
@@ -325,6 +403,17 @@ export function FocusPage() {
   const [sessions, setSessions] = useState<FocusSession[]>(loadSessions);
   const [treeLevel, setTreeLevel] = useState(loadTreeLevel);
 
+  /* ── Media URL ── */
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingTaskText, setEditingTaskText] = useState("");
+
+  /* ── Schedule reminders ── */
+  const [upcomingEvents] = useState<ScheduleEvent[]>(getMockUpcomingEvents);
+  const [showScheduleReminder, setShowScheduleReminder] = useState(false);
+  const [reminderEvent, setReminderEvent] = useState<ScheduleEvent | null>(null);
+  const [dismissedReminders, setDismissedReminders] = useState<Set<string>>(new Set());
+
   /* ── Settings overlay ── */
   const [showSettings, setShowSettings] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -416,6 +505,29 @@ export function FocusPage() {
     };
   }, [phase, timerMode, isPaused, timeElapsed]);
 
+  /* ── Schedule reminder check ── */
+  useEffect(() => {
+    if (phase !== "active" || isPaused) return;
+    const checkSchedule = setInterval(() => {
+      const now = new Date();
+      for (const evt of upcomingEvents) {
+        if (dismissedReminders.has(evt.id)) continue;
+        const diff = evt.startTime.getTime() - now.getTime();
+        // Remind 5 minutes before
+        if (diff > 0 && diff <= 5 * 60 * 1000) {
+          setReminderEvent(evt);
+          setShowScheduleReminder(true);
+          break;
+        }
+      }
+    }, 10000); // check every 10 seconds
+    return () => clearInterval(checkSchedule);
+  }, [phase, isPaused, upcomingEvents, dismissedReminders]);
+
+  /* ── Media helpers ── */
+  const mediaType = useMemo(() => detectMediaType(mediaUrl), [mediaUrl]);
+  const hasMedia = mediaType !== null;
+
   /* ── Fullscreen API ── */
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
@@ -478,6 +590,24 @@ export function FocusPage() {
   const toggleMicroTask = useCallback((id: string) => {
     setMicroTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
   }, []);
+
+  const deleteMicroTask = useCallback((id: string) => {
+    setMicroTasks((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const startEditTask = useCallback((id: string, text: string) => {
+    setEditingTaskId(id);
+    setEditingTaskText(text);
+  }, []);
+
+  const saveEditTask = useCallback(() => {
+    if (!editingTaskId) return;
+    setMicroTasks((prev) =>
+      prev.map((t) => (t.id === editingTaskId ? { ...t, text: editingTaskText.trim() || t.text } : t))
+    );
+    setEditingTaskId(null);
+    setEditingTaskText("");
+  }, [editingTaskId, editingTaskText]);
 
   const startBreak = useCallback(() => {
     setPhase("break");
@@ -864,6 +994,70 @@ export function FocusPage() {
               </div>
             </div>
 
+            {/* Media URL (optional) */}
+            <div>
+              <label className="block text-[0.75rem] text-white/50 mb-2" style={{ fontWeight: 600 }}>
+                <span className="flex items-center gap-1.5">
+                  <Link2 className="h-3 w-3" />
+                  播放视频/音乐（可选）
+                </span>
+              </label>
+              <div className="relative">
+                <input
+                  value={mediaUrl}
+                  onChange={(e) => setMediaUrl(e.target.value)}
+                  placeholder="粘贴 YouTube / Spotify / Apple Music 或其他媒体链接..."
+                  className="w-full rounded-xl border border-white/10 bg-white/5 pl-4 pr-10 py-3 text-[0.875rem] text-white placeholder:text-white/20 outline-none focus:border-white/20 backdrop-blur-sm transition-colors"
+                />
+                {mediaUrl && (
+                  <button
+                    onClick={() => setMediaUrl("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              {/* URL type indicator */}
+              {mediaUrl.trim() && (
+                <div className="flex items-center gap-2 mt-2">
+                  {(() => {
+                    const mt = detectMediaType(mediaUrl);
+                    const info: Record<string, { icon: typeof Youtube; label: string; color: string }> = {
+                      youtube: { icon: Youtube, label: "YouTube 视频", color: "text-red-400" },
+                      spotify: { icon: Music2, label: "Spotify 音乐", color: "text-green-400" },
+                      "apple-music": { icon: Music, label: "Apple Music", color: "text-pink-400" },
+                      video: { icon: Tv, label: "视频链接", color: "text-blue-400" },
+                      audio: { icon: Headphones, label: "音频链接", color: "text-cyan-400" },
+                      unknown: { icon: Globe, label: "外部链接", color: "text-white/40" },
+                    };
+                    const item = mt && info[mt];
+                    if (!item) return <span className="text-[0.6875rem] text-red-400/60">无法识别的链接格式</span>;
+                    const Icon = item.icon;
+                    return (
+                      <div className="flex items-center gap-1.5">
+                        <Icon className={`h-3 w-3 ${item.color}`} />
+                        <span className={`text-[0.6875rem] ${item.color}`}>{item.label}</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+              {/* Quick platform hints */}
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {[
+                  { icon: Youtube, label: "YouTube", color: "text-red-400/50" },
+                  { icon: Music2, label: "Spotify", color: "text-green-400/50" },
+                  { icon: Music, label: "Apple Music", color: "text-pink-400/50" },
+                ].map((p) => (
+                  <div key={p.label} className="flex items-center gap-1 rounded-md bg-white/[0.03] px-2 py-0.5">
+                    <p.icon className={`h-2.5 w-2.5 ${p.color}`} />
+                    <span className="text-[0.5625rem] text-white/25">{p.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Start button */}
             <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
               <Button
@@ -889,12 +1083,79 @@ export function FocusPage() {
     const displayTime = phase === "break" ? breakTimeLeft : timerMode === "pomodoro" ? timeLeft : timeElapsed;
     const isBreak = phase === "break";
 
+    /* ── Media embed renderer ── */
+    const renderMedia = () => {
+      if (!hasMedia) return null;
+      const mt = mediaType!;
+      if (mt === "youtube") {
+        const vid = getYouTubeId(mediaUrl);
+        if (!vid) return null;
+        return (
+          <iframe
+            src={`https://www.youtube.com/embed/${vid}?autoplay=1&rel=0`}
+            className="w-full h-full rounded-xl"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+          />
+        );
+      }
+      if (mt === "spotify") {
+        const embedUrl = getSpotifyEmbedUrl(mediaUrl);
+        if (!embedUrl) return null;
+        return (
+          <iframe
+            src={embedUrl}
+            className="w-full rounded-xl"
+            style={{ height: "152px" }}
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+          />
+        );
+      }
+      if (mt === "apple-music") {
+        const embedUrl = getAppleMusicEmbedUrl(mediaUrl);
+        if (!embedUrl) return null;
+        return (
+          <iframe
+            src={embedUrl}
+            className="w-full rounded-xl"
+            style={{ height: "175px" }}
+            allow="autoplay; encrypted-media"
+            sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
+            loading="lazy"
+          />
+        );
+      }
+      if (mt === "video") {
+        return (
+          <video src={mediaUrl} controls autoPlay className="w-full h-full rounded-xl object-contain" />
+        );
+      }
+      if (mt === "audio") {
+        return (
+          <div className="flex flex-col items-center justify-center gap-3 py-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Headphones className="h-5 w-5 text-white/40" />
+              <span className="text-[0.8125rem] text-white/50">音频播放中</span>
+            </div>
+            <audio src={mediaUrl} controls autoPlay className="w-full max-w-sm" />
+          </div>
+        );
+      }
+      // Generic embed
+      return (
+        <iframe src={mediaUrl} className="w-full h-full rounded-xl" allow="autoplay" loading="lazy" />
+      );
+    };
+
+    const isAudioOnly = mediaType === "spotify" || mediaType === "apple-music" || mediaType === "audio";
+
     return (
       <div className={`fixed inset-0 z-0 flex flex-col bg-gradient-to-br ${AMBIENT_THEMES[ambientTheme].bg} text-white overflow-hidden select-none`}>
         <BreathingOrb theme={ambientTheme} />
 
-        {/* Minimal top bar — fades on inactivity in real app */}
-        <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-3 opacity-60 hover:opacity-100 transition-opacity duration-500">
+        {/* ── Top bar ── */}
+        <div className="relative z-20 flex shrink-0 items-center justify-between px-4 py-2.5 bg-black/20 backdrop-blur-sm border-b border-white/5">
           <button
             onClick={stopFocus}
             className="rounded-lg px-3 py-1.5 text-white/40 hover:text-white/70 hover:bg-white/5 text-[0.75rem] transition-all"
@@ -903,7 +1164,8 @@ export function FocusPage() {
             结束专注
           </button>
 
-          <div className="flex items-center gap-2">
+          {/* Center: Timer + controls */}
+          <div className="flex items-center gap-3">
             {!isBreak && (
               <Badge className="bg-white/8 text-white/50 border-0 text-[0.625rem]">
                 {timerMode === "pomodoro" ? "番茄钟" : "心流"}
@@ -911,324 +1173,84 @@ export function FocusPage() {
             )}
             {isBreak && (
               <Badge className="bg-emerald-500/15 text-emerald-300 border-0 text-[0.625rem]">
-                <Coffee className="h-2.5 w-2.5 mr-1" />
-                休息中
+                <Coffee className="h-2.5 w-2.5 mr-1" /> 休息中
               </Badge>
             )}
-          </div>
 
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={toggleFullscreen}
-              className="rounded-lg p-1.5 text-white/30 hover:text-white/60 transition-colors"
-            >
-              {isFullscreen ? <Shrink className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
-            </button>
-            <button
-              onClick={() => setMasterVolume(!masterVolume)}
-              className="rounded-lg p-1.5 text-white/30 hover:text-white/60 transition-colors"
-            >
-              {masterVolume ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Center: Timer */}
-        <div className="flex flex-1 items-center justify-center relative z-10">
-          <div className="text-center">
-            {/* Task name */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mb-6"
-            >
-              <p className="text-[0.875rem] text-white/30 mb-1" style={{ fontWeight: 500 }}>
-                {isBreak ? "休息一下，充充电" : taskName}
-              </p>
-            </motion.div>
-
-            {/* Big timer */}
-            <motion.div
-              key={isBreak ? "break" : "active"}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="relative"
-            >
-              {/* Circular progress for pomodoro */}
+            {/* Compact timer with circular progress */}
+            <div className="flex items-center gap-2">
               {timerMode === "pomodoro" && !isBreak && (
-                <svg className="absolute -inset-8 sm:-inset-12" viewBox="0 0 200 200">
+                <svg className="h-8 w-8" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2" />
                   <circle
-                    cx="100"
-                    cy="100"
-                    r="90"
-                    fill="none"
-                    stroke="rgba(255,255,255,0.04)"
-                    strokeWidth="2"
-                  />
-                  <circle
-                    cx="100"
-                    cy="100"
-                    r="90"
-                    fill="none"
-                    stroke="rgba(139,92,246,0.3)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 90}`}
-                    strokeDashoffset={`${2 * Math.PI * 90 * (1 - pomodoroProgress / 100)}`}
-                    transform="rotate(-90 100 100)"
+                    cx="18" cy="18" r="15.5"
+                    fill="none" stroke="rgba(139,92,246,0.5)" strokeWidth="2" strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 15.5}`}
+                    strokeDashoffset={`${2 * Math.PI * 15.5 * (1 - pomodoroProgress / 100)}`}
+                    transform="rotate(-90 18 18)"
                     className="transition-all duration-1000"
                   />
                 </svg>
               )}
-
-              <div
-                className="text-[4rem] sm:text-[5.5rem] tabular-nums tracking-tight"
-                style={{ fontWeight: 200, letterSpacing: "-0.02em" }}
-              >
+              <div className="text-[1.5rem] sm:text-[1.75rem] tabular-nums" style={{ fontWeight: 300, letterSpacing: "-0.02em" }}>
                 {formatDuration(displayTime)}
               </div>
-            </motion.div>
-
-            {/* Controls */}
-            <div className="flex items-center justify-center gap-4 mt-8">
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setIsPaused(!isPaused)}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm border border-white/10 hover:bg-white/15 transition-colors"
-              >
-                {isPaused ? <Play className="h-5 w-5 ml-0.5" /> : <Pause className="h-5 w-5" />}
-              </motion.button>
-
-              {!isBreak && timerMode === "pomodoro" && (
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => {
-                    startBreak();
-                  }}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 border border-white/5 text-white/30 hover:text-white/60 transition-colors"
-                  title="跳过至休息"
-                >
-                  <SkipForward className="h-4 w-4" />
-                </motion.button>
-              )}
-
-              {isBreak && (
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={finishSession}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 border border-white/5 text-white/30 hover:text-white/60 transition-colors"
-                  title="结束"
-                >
-                  <Check className="h-4 w-4" />
-                </motion.button>
-              )}
             </div>
 
-            {/* Micro task progress */}
-            {!isBreak && microTasks.length > 0 && (
-              <div className="mt-8 max-w-xs mx-auto">
-                <div className="flex items-center justify-between text-[0.625rem] text-white/30 mb-1.5">
-                  <span>任务进度</span>
-                  <span>{microTasks.filter((t) => t.done).length}/{microTasks.length}</span>
-                </div>
-                <div className="h-1 rounded-full bg-white/5 overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-400"
-                    animate={{ width: `${microTaskProgress}%` }}
-                    transition={{ duration: 0.5 }}
-                  />
-                </div>
-              </div>
+            {/* Play/pause */}
+            <button
+              onClick={() => setIsPaused(!isPaused)}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 border border-white/10 hover:bg-white/15 transition-colors"
+            >
+              {isPaused ? <Play className="h-3.5 w-3.5 ml-0.5" /> : <Pause className="h-3.5 w-3.5" />}
+            </button>
+
+            {!isBreak && timerMode === "pomodoro" && (
+              <button
+                onClick={startBreak}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/5 text-white/30 hover:text-white/60 transition-colors"
+                title="跳过至休息"
+              >
+                <SkipForward className="h-3 w-3" />
+              </button>
             )}
+            {isBreak && (
+              <button
+                onClick={finishSession}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/5 text-white/30 hover:text-white/60 transition-colors"
+                title="结束"
+              >
+                <Check className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {/* Task name */}
+            <span className="text-[0.6875rem] text-white/30 hidden sm:inline mr-2 max-w-32 truncate">
+              {isBreak ? "休息中" : taskName}
+            </span>
+            <button onClick={toggleFullscreen} className="rounded-lg p-1.5 text-white/30 hover:text-white/60 transition-colors">
+              {isFullscreen ? <Shrink className="h-3.5 w-3.5" /> : <Expand className="h-3.5 w-3.5" />}
+            </button>
+            <button onClick={() => setMasterVolume(!masterVolume)} className="rounded-lg p-1.5 text-white/30 hover:text-white/60 transition-colors">
+              {masterVolume ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+            </button>
           </div>
         </div>
 
-        {/* Bottom panels: micro tasks + unblock */}
-        {!isBreak && (
-          <div className="absolute bottom-0 left-0 right-0 z-20 flex items-end justify-between px-4 pb-4 gap-4">
-            {/* Left: Micro Tasks panel */}
-            <AnimatePresence>
-              {showMicroTasks && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  className="w-72 max-h-64 overflow-y-auto rounded-2xl border border-white/8 bg-black/40 backdrop-blur-xl p-3"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[0.6875rem] text-white/50" style={{ fontWeight: 600 }}>
-                      微型冲刺任务
-                    </span>
-                    <button onClick={() => setShowMicroTasks(false)} className="text-white/20 hover:text-white/40">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                  <div className="space-y-1">
-                    {microTasks.map((task) => (
-                      <button
-                        key={task.id}
-                        onClick={() => toggleMicroTask(task.id)}
-                        className={`flex items-center gap-2 w-full rounded-lg px-2 py-1.5 text-left transition-all ${
-                          task.done ? "opacity-40" : "hover:bg-white/5"
-                        }`}
-                      >
-                        <div
-                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
-                            task.done
-                              ? "border-emerald-400/50 bg-emerald-500/20"
-                              : "border-white/20"
-                          }`}
-                        >
-                          {task.done && <Check className="h-2.5 w-2.5 text-emerald-400" />}
-                        </div>
-                        <span
-                          className={`text-[0.75rem] ${task.done ? "line-through text-white/30" : "text-white/70"}`}
-                        >
-                          {task.text}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                  {/* Add task */}
-                  <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-white/5">
-                    <input
-                      value={newMicroTask}
-                      onChange={(e) => setNewMicroTask(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addMicroTask()}
-                      placeholder="添加微任务..."
-                      className="flex-1 bg-transparent text-[0.6875rem] text-white/60 placeholder:text-white/20 outline-none"
-                    />
-                    <button
-                      onClick={addMicroTask}
-                      className="rounded p-1 text-white/20 hover:text-white/50 transition-colors"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {!showMicroTasks && (
-              <button
-                onClick={() => setShowMicroTasks(true)}
-                className="rounded-full bg-black/30 backdrop-blur-sm border border-white/5 p-2.5 text-white/30 hover:text-white/60 transition-colors"
-                title="任务列表"
-              >
-                <Target className="h-4 w-4" />
-              </button>
-            )}
-
-            {/* Right: Unblock button */}
-            <div className="flex flex-col items-end gap-2">
-              <AnimatePresence>
-                {showUnblock && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                    className="w-80 max-h-72 flex flex-col rounded-2xl border border-white/8 bg-black/50 backdrop-blur-xl overflow-hidden"
-                  >
-                    <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
-                      <div className="flex items-center gap-1.5">
-                        <Lightbulb className="h-3 w-3 text-amber-400" />
-                        <span className="text-[0.6875rem] text-white/60" style={{ fontWeight: 600 }}>
-                          拉我一把
-                        </span>
-                      </div>
-                      <button onClick={() => setShowUnblock(false)} className="text-white/20 hover:text-white/40">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-[100px]">
-                      {unblockMessages.length === 0 && (
-                        <p className="text-[0.6875rem] text-white/30 text-center py-4">
-                          遇到难题了？告诉我你卡在哪里
-                        </p>
-                      )}
-                      {unblockMessages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                        >
-                          <div
-                            className={`max-w-[85%] rounded-xl px-3 py-2 text-[0.75rem] leading-relaxed ${
-                              msg.role === "user"
-                                ? "bg-violet-500/20 text-white/80"
-                                : "bg-white/5 text-white/60"
-                            }`}
-                          >
-                            {msg.content}
-                          </div>
-                        </div>
-                      ))}
-                      {unblockTyping && (
-                        <div className="flex justify-start">
-                          <div className="rounded-xl bg-white/5 px-3 py-2">
-                            <Loader2 className="h-3 w-3 animate-spin text-white/30" />
-                          </div>
-                        </div>
-                      )}
-                      <div ref={messagesEndRef} />
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-2 border-t border-white/5">
-                      <input
-                        value={unblockInput}
-                        onChange={(e) => setUnblockInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && sendUnblockMessage()}
-                        placeholder="描述你卡在哪里..."
-                        className="flex-1 bg-transparent text-[0.75rem] text-white/70 placeholder:text-white/20 outline-none"
-                      />
-                      <button
-                        onClick={sendUnblockMessage}
-                        disabled={!unblockInput.trim()}
-                        className="rounded-lg p-1.5 text-white/30 hover:text-white/60 disabled:opacity-30 transition-colors"
-                      >
-                        <Send className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {!showUnblock && (
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowUnblock(true)}
-                  className="rounded-full bg-black/30 backdrop-blur-sm border border-white/5 p-2.5 text-white/30 hover:text-amber-400/70 transition-colors"
-                  title="拉我一把 (Unblock Me)"
-                >
-                  <Lightbulb className="h-4 w-4" />
-                </motion.button>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Active sounds indicator */}
         {sounds.some((s) => s.active) && masterVolume && (
-          <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20">
-            <div className="flex items-center gap-2 rounded-full bg-black/30 backdrop-blur-sm border border-white/5 px-3 py-1.5">
-              <Volume2 className="h-3 w-3 text-white/30" />
-              <div className="flex items-center gap-1.5">
-                {sounds
-                  .filter((s) => s.active)
-                  .map((s) => (
-                    <s.icon key={s.id} className={`h-3 w-3 ${s.color}`} />
-                  ))}
-              </div>
-              {/* Animated equalizer bars */}
-              <div className="flex items-end gap-px h-3">
+          <div className="absolute top-[3.25rem] left-1/2 -translate-x-1/2 z-20">
+            <div className="flex items-center gap-1.5 rounded-full bg-black/30 backdrop-blur-sm border border-white/5 px-2.5 py-1">
+              {sounds.filter((s) => s.active).map((s) => (
+                <s.icon key={s.id} className={`h-2.5 w-2.5 ${s.color}`} />
+              ))}
+              <div className="flex items-end gap-px h-2.5">
                 {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    animate={{ height: ["30%", "100%", "50%", "80%", "30%"] }}
+                  <motion.div key={i} animate={{ height: ["30%", "100%", "50%", "80%", "30%"] }}
                     transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2, ease: "easeInOut" }}
-                    className="w-[2px] rounded-full bg-white/20"
+                    className="w-[1.5px] rounded-full bg-white/20"
                   />
                 ))}
               </div>
@@ -1236,23 +1258,373 @@ export function FocusPage() {
           </div>
         )}
 
-        {/* Gentle nudge modal */}
+        {/* ── Main content area ── */}
+        <div className="flex flex-1 min-h-0 relative z-10">
+          {/* ── Left: Micro Tasks Panel ── */}
+          {!isBreak && (
+            <div className="hidden sm:flex w-72 shrink-0 flex-col border-r border-white/5 bg-black/20 backdrop-blur-sm">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+                <span className="text-[0.75rem] text-white/50" style={{ fontWeight: 600 }}>
+                  微型冲刺任务
+                </span>
+                <Badge className="bg-white/8 text-white/40 border-0 text-[0.5625rem]">
+                  {microTasks.filter((t) => t.done).length}/{microTasks.length}
+                </Badge>
+              </div>
+
+              {/* Progress bar */}
+              {microTasks.length > 0 && (
+                <div className="px-4 pt-2">
+                  <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-400"
+                      animate={{ width: `${microTaskProgress}%` }}
+                      transition={{ duration: 0.5 }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Task list */}
+              <div className="flex-1 overflow-y-auto px-3 py-2">
+                <div className="space-y-0.5">
+                  {microTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className={`group flex items-center gap-2 rounded-lg px-2 py-1.5 transition-all ${
+                        task.done ? "opacity-40" : "hover:bg-white/5"
+                      }`}
+                    >
+                      <button
+                        onClick={() => toggleMicroTask(task.id)}
+                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                          task.done ? "border-emerald-400/50 bg-emerald-500/20" : "border-white/20 hover:border-white/40"
+                        }`}
+                      >
+                        {task.done && <Check className="h-2.5 w-2.5 text-emerald-400" />}
+                      </button>
+
+                      {editingTaskId === task.id ? (
+                        <input
+                          autoFocus
+                          value={editingTaskText}
+                          onChange={(e) => setEditingTaskText(e.target.value)}
+                          onBlur={saveEditTask}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveEditTask();
+                            if (e.key === "Escape") { setEditingTaskId(null); setEditingTaskText(""); }
+                          }}
+                          className="flex-1 bg-transparent text-[0.75rem] text-white/80 outline-none border-b border-violet-400/30"
+                        />
+                      ) : (
+                        <span
+                          className={`flex-1 text-[0.75rem] cursor-pointer ${
+                            task.done ? "line-through text-white/30" : "text-white/70"
+                          }`}
+                          onDoubleClick={() => startEditTask(task.id, task.text)}
+                        >
+                          {task.text}
+                        </span>
+                      )}
+
+                      {/* Edit/Delete buttons */}
+                      {editingTaskId !== task.id && (
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <button
+                            onClick={() => startEditTask(task.id, task.text)}
+                            className="rounded p-0.5 text-white/20 hover:text-white/50 transition-colors"
+                            title="编辑"
+                          >
+                            <Pencil className="h-2.5 w-2.5" />
+                          </button>
+                          <button
+                            onClick={() => deleteMicroTask(task.id)}
+                            className="rounded p-0.5 text-white/20 hover:text-red-400/70 transition-colors"
+                            title="删除"
+                          >
+                            <Trash2 className="h-2.5 w-2.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Add task */}
+              <div className="border-t border-white/5 px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <input
+                    value={newMicroTask}
+                    onChange={(e) => setNewMicroTask(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addMicroTask()}
+                    placeholder="添加微任务..."
+                    className="flex-1 bg-transparent text-[0.75rem] text-white/60 placeholder:text-white/20 outline-none"
+                  />
+                  <button
+                    onClick={addMicroTask}
+                    disabled={!newMicroTask.trim()}
+                    className="rounded-lg p-1 text-white/20 hover:text-white/50 disabled:opacity-30 transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Center: Media + Timer (no media = large centered timer) ── */}
+          <div className="flex flex-1 flex-col items-center justify-center overflow-hidden px-4">
+            {hasMedia && !isBreak ? (
+              <div className="w-full max-w-2xl flex flex-col items-center gap-4">
+                {/* Media player */}
+                <div className={`w-full rounded-xl overflow-hidden border border-white/8 bg-black/40 ${
+                  isAudioOnly ? "" : "aspect-video max-h-[50vh]"
+                }`}>
+                  {renderMedia()}
+                </div>
+              </div>
+            ) : (
+              /* No media: show large centered timer */
+              <div className="text-center">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4">
+                  <p className="text-[0.875rem] text-white/30" style={{ fontWeight: 500 }}>
+                    {isBreak ? "休息一下，充充电" : taskName}
+                  </p>
+                </motion.div>
+                <motion.div
+                  key={isBreak ? "break" : "active"}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="relative"
+                >
+                  {timerMode === "pomodoro" && !isBreak && (
+                    <svg className="absolute -inset-8 sm:-inset-12" viewBox="0 0 200 200">
+                      <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="2" />
+                      <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(139,92,246,0.3)" strokeWidth="2" strokeLinecap="round"
+                        strokeDasharray={`${2 * Math.PI * 90}`}
+                        strokeDashoffset={`${2 * Math.PI * 90 * (1 - pomodoroProgress / 100)}`}
+                        transform="rotate(-90 100 100)"
+                        className="transition-all duration-1000"
+                      />
+                    </svg>
+                  )}
+                  <div className="text-[4rem] sm:text-[5.5rem] tabular-nums tracking-tight"
+                    style={{ fontWeight: 200, letterSpacing: "-0.02em" }}>
+                    {formatDuration(displayTime)}
+                  </div>
+                </motion.div>
+                <div className="flex items-center justify-center gap-4 mt-8">
+                  <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                    onClick={() => setIsPaused(!isPaused)}
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm border border-white/10 hover:bg-white/15 transition-colors">
+                    {isPaused ? <Play className="h-5 w-5 ml-0.5" /> : <Pause className="h-5 w-5" />}
+                  </motion.button>
+                </div>
+                {!isBreak && microTasks.length > 0 && (
+                  <div className="mt-8 max-w-xs mx-auto">
+                    <div className="flex items-center justify-between text-[0.625rem] text-white/30 mb-1.5">
+                      <span>任务进度</span>
+                      <span>{microTasks.filter((t) => t.done).length}/{microTasks.length}</span>
+                    </div>
+                    <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+                      <motion.div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-400"
+                        animate={{ width: `${microTaskProgress}%` }} transition={{ duration: 0.5 }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ── Right: AI Panel ── */}
+          {!isBreak && (
+            <div className="hidden sm:flex w-80 shrink-0 flex-col border-l border-white/5 bg-black/20 backdrop-blur-sm">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-violet-500/20">
+                  <Sparkles className="h-3 w-3 text-violet-400" />
+                </div>
+                <span className="text-[0.75rem] text-white/60" style={{ fontWeight: 600 }}>
+                  AI 助手
+                </span>
+                <Badge className="ml-auto bg-white/8 text-white/30 border-0 text-[0.5rem]">
+                  专注模式
+                </Badge>
+              </div>
+
+              {/* Quick actions */}
+              <div className="flex gap-1.5 px-3 py-2 border-b border-white/5">
+                <button
+                  onClick={() => {
+                    if (unblockMessages.length === 0) {
+                      setUnblockMessages([{ id: uid(), role: "ai", content: "我在这里陪你。遇到卡壳可以随时告诉我，我会帮你理清思路，一步步突破障碍。" }]);
+                    }
+                  }}
+                  className="flex-1 flex items-center gap-1.5 rounded-lg bg-white/5 px-2.5 py-1.5 text-[0.625rem] text-white/40 hover:text-white/60 hover:bg-white/8 transition-colors"
+                >
+                  <Lightbulb className="h-3 w-3 text-amber-400/60" />
+                  <span>拉我一把</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const tips = [
+                      "试试把当前任务拆成更小的步骤，先完成最简单的部分。",
+                      "深呼吸 3 次，闭眼 10 秒，然后重新出发。",
+                      "换个角度思考：如果你要教别人做这件事，你会怎么解释？",
+                      "先写下你目前知道的，不知道的自然就浮现了。",
+                    ];
+                    const tip = tips[Math.floor(Math.random() * tips.length)];
+                    setUnblockMessages((prev) => [...prev, { id: uid(), role: "ai", content: tip }]);
+                  }}
+                  className="flex-1 flex items-center gap-1.5 rounded-lg bg-white/5 px-2.5 py-1.5 text-[0.625rem] text-white/40 hover:text-white/60 hover:bg-white/8 transition-colors"
+                >
+                  <Zap className="h-3 w-3 text-cyan-400/60" />
+                  <span>灵感启发</span>
+                </button>
+              </div>
+
+              {/* Chat messages */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {unblockMessages.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 mb-3">
+                      <Lightbulb className="h-5 w-5 text-white/15" />
+                    </div>
+                    <p className="text-[0.6875rem] text-white/25 leading-relaxed max-w-[200px]">
+                      遇到难题了？点击上方按钮或直接输入问题，我会帮你突破瓶颈
+                    </p>
+                  </div>
+                )}
+                {unblockMessages.map((msg) => (
+                  <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[90%] rounded-xl px-3 py-2 text-[0.75rem] leading-relaxed ${
+                      msg.role === "user" ? "bg-violet-500/20 text-white/80" : "bg-white/5 text-white/60"
+                    }`}>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {unblockTyping && (
+                  <div className="flex justify-start">
+                    <div className="rounded-xl bg-white/5 px-3 py-2">
+                      <Loader2 className="h-3 w-3 animate-spin text-white/30" />
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Chat input */}
+              <div className="border-t border-white/5 px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <input
+                    value={unblockInput}
+                    onChange={(e) => setUnblockInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && sendUnblockMessage()}
+                    placeholder="描述你遇到的问题..."
+                    className="flex-1 bg-transparent text-[0.75rem] text-white/70 placeholder:text-white/20 outline-none"
+                  />
+                  <button
+                    onClick={sendUnblockMessage}
+                    disabled={!unblockInput.trim()}
+                    className="rounded-lg p-1.5 text-white/30 hover:text-white/60 disabled:opacity-30 transition-colors"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Mobile bottom panels (only show toggles on small screens) ── */}
+        {!isBreak && (
+          <div className="sm:hidden absolute bottom-0 left-0 right-0 z-20 flex items-end justify-between px-4 pb-4 gap-2">
+            <AnimatePresence>
+              {showMicroTasks && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+                  className="w-64 max-h-56 overflow-y-auto rounded-2xl border border-white/8 bg-black/50 backdrop-blur-xl p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[0.6875rem] text-white/50" style={{ fontWeight: 600 }}>任务</span>
+                    <button onClick={() => setShowMicroTasks(false)} className="text-white/20 hover:text-white/40">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <div className="space-y-0.5">
+                    {microTasks.map((task) => (
+                      <div key={task.id} className={`group flex items-center gap-2 rounded-lg px-2 py-1.5 ${task.done ? "opacity-40" : ""}`}>
+                        <button onClick={() => toggleMicroTask(task.id)}
+                          className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border ${
+                            task.done ? "border-emerald-400/50 bg-emerald-500/20" : "border-white/20"
+                          }`}>
+                          {task.done && <Check className="h-2 w-2 text-emerald-400" />}
+                        </button>
+                        <span className={`flex-1 text-[0.6875rem] ${task.done ? "line-through text-white/30" : "text-white/70"}`}>{task.text}</span>
+                        <button onClick={() => deleteMicroTask(task.id)} className="text-white/15 hover:text-red-400/70 opacity-0 group-hover:opacity-100">
+                          <Trash2 className="h-2.5 w-2.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-white/5">
+                    <input value={newMicroTask} onChange={(e) => setNewMicroTask(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addMicroTask()}
+                      placeholder="添加..." className="flex-1 bg-transparent text-[0.625rem] text-white/60 placeholder:text-white/20 outline-none" />
+                    <button onClick={addMicroTask} className="text-white/20 hover:text-white/50"><Plus className="h-3 w-3" /></button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {!showMicroTasks && (
+              <button onClick={() => setShowMicroTasks(true)} className="rounded-full bg-black/30 backdrop-blur-sm border border-white/5 p-2.5 text-white/30 hover:text-white/60">
+                <Target className="h-4 w-4" />
+              </button>
+            )}
+
+            <AnimatePresence>
+              {showUnblock && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+                  className="w-64 max-h-56 flex flex-col rounded-2xl border border-white/8 bg-black/50 backdrop-blur-xl overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
+                    <div className="flex items-center gap-1"><Lightbulb className="h-3 w-3 text-amber-400" /><span className="text-[0.625rem] text-white/60" style={{ fontWeight: 600 }}>AI 助手</span></div>
+                    <button onClick={() => setShowUnblock(false)} className="text-white/20 hover:text-white/40"><X className="h-3 w-3" /></button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-2 space-y-1.5 min-h-[80px]">
+                    {unblockMessages.map((msg) => (
+                      <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                        <div className={`max-w-[85%] rounded-lg px-2.5 py-1.5 text-[0.6875rem] ${msg.role === "user" ? "bg-violet-500/20 text-white/80" : "bg-white/5 text-white/60"}`}>{msg.content}</div>
+                      </div>
+                    ))}
+                    {unblockTyping && <div className="flex justify-start"><div className="rounded-lg bg-white/5 px-2.5 py-1.5"><Loader2 className="h-3 w-3 animate-spin text-white/30" /></div></div>}
+                    <div ref={messagesEndRef} />
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-2 border-t border-white/5">
+                    <input value={unblockInput} onChange={(e) => setUnblockInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && sendUnblockMessage()}
+                      placeholder="问题..." className="flex-1 bg-transparent text-[0.625rem] text-white/70 placeholder:text-white/20 outline-none" />
+                    <button onClick={sendUnblockMessage} disabled={!unblockInput.trim()} className="text-white/30 hover:text-white/60 disabled:opacity-30"><Send className="h-3 w-3" /></button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {!showUnblock && (
+              <button onClick={() => setShowUnblock(true)} className="rounded-full bg-black/30 backdrop-blur-sm border border-white/5 p-2.5 text-white/30 hover:text-amber-400/70">
+                <Lightbulb className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── Gentle nudge modal ── */}
         <AnimatePresence>
           {showNudge && (
             <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 bg-black/30"
-                onClick={() => setShowNudge(false)}
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              >
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 bg-black/30" onClick={() => setShowNudge(false)} />
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 text-center">
                   <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/15">
                     <MessageCircle className="h-5 w-5 text-amber-400" />
@@ -1261,21 +1633,63 @@ export function FocusPage() {
                     {nudgeMessage}
                   </p>
                   <div className="flex gap-2">
+                    <Button onClick={() => setShowNudge(false)} variant="outline"
+                      className="flex-1 rounded-xl border-white/10 text-white/60 hover:bg-white/5 bg-transparent text-[0.8125rem]">
+                      继续专注
+                    </Button>
+                    <Button onClick={() => { setShowNudge(false); startBreak(); }}
+                      className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[0.8125rem]">
+                      <Coffee className="h-3.5 w-3.5 mr-1" /> 休息一会
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* ── Schedule Reminder Modal ── */}
+        <AnimatePresence>
+          {showScheduleReminder && reminderEvent && (
+            <>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[60] bg-black/40" />
+              <motion.div initial={{ opacity: 0, y: -20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                className="fixed inset-0 z-[61] flex items-start justify-center pt-20 px-4">
+                <div className="w-full max-w-sm rounded-2xl border border-amber-500/20 bg-black/70 backdrop-blur-xl p-5 shadow-2xl">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15">
+                      <CalendarClock className="h-5 w-5 text-amber-400" />
+                    </div>
+                    <div>
+                      <div className="text-[0.6875rem] text-amber-400/60 mb-0.5" style={{ fontWeight: 600 }}>日程提醒</div>
+                      <h3 className="text-[1rem] text-white/90" style={{ fontWeight: 600 }}>{reminderEvent.title}</h3>
+                      <p className="text-[0.75rem] text-white/40 mt-0.5">
+                        {reminderEvent.startTime.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })} 开始 · 还有约 {Math.max(1, Math.ceil((reminderEvent.startTime.getTime() - Date.now()) / 60000))} 分钟
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
                     <Button
-                      onClick={() => setShowNudge(false)}
+                      onClick={() => {
+                        setShowScheduleReminder(false);
+                        setDismissedReminders((prev) => new Set(prev).add(reminderEvent.id));
+                      }}
                       variant="outline"
                       className="flex-1 rounded-xl border-white/10 text-white/60 hover:bg-white/5 bg-transparent text-[0.8125rem]"
                     >
-                      继续专注
+                      稍后提醒
                     </Button>
                     <Button
                       onClick={() => {
-                        setShowNudge(false);
-                        startBreak();
+                        setShowScheduleReminder(false);
+                        setDismissedReminders((prev) => new Set(prev).add(reminderEvent.id));
+                        stopFocus();
                       }}
-                      className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[0.8125rem]"
+                      className="flex-1 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-[0.8125rem]"
                     >
-                      <Coffee className="h-3.5 w-3.5 mr-1" /> 休息一会
+                      <Bell className="h-3.5 w-3.5 mr-1" /> 结束专注去处理
                     </Button>
                   </div>
                 </div>

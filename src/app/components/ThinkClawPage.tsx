@@ -37,7 +37,7 @@ import {
   Star,
   Bookmark,
   Search,
-  Edit3,
+  Pencil,
   Pin,
 } from "lucide-react";
 
@@ -942,7 +942,7 @@ export function ThinkClawPage() {
                             className="rounded p-1 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
                             title="重命名"
                           >
-                            <Edit3 className="h-3 w-3" />
+                            <Pencil className="h-3 w-3" />
                           </button>
                           <button
                             onClick={(e) => {

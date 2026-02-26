@@ -29,11 +29,12 @@ import { NotificationPanel } from "./NotificationPanel";
 import { AIChatDrawer } from "./AIChatDrawer";
 import { Badge } from "./ui/badge";
 
-export type DashboardTab = "tasks" | "calendar" | "circles" | "stats" | "settings" | "help";
+export type DashboardTab = "tasks" | "calendar" | "circles" | "stats" | "focus" | "settings" | "help";
 
 const navItems = [
   { key: "tasks" as DashboardTab, label: "任务日程", icon: ListTodo },
   { key: "calendar" as DashboardTab, label: "日程规划", icon: CalendarDays },
+  { key: "focus" as DashboardTab, label: "专注空间", icon: Target },
   { key: "circles" as DashboardTab, label: "协作空间", icon: Users },
   { key: "stats" as DashboardTab, label: "数据统计", icon: BarChart3 },
 ];
@@ -193,16 +194,6 @@ export function AppLayout() {
                 New
               </Badge>
             )}
-          </button>
-
-          <button
-            onClick={() => navigate("/focus")}
-            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-[0.875rem] text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-            style={{ fontWeight: 400 }}
-            title={collapsed ? "专注空间" : undefined}
-          >
-            <Target className="h-[1.125rem] w-[1.125rem] shrink-0" />
-            {!collapsed && <span className="whitespace-nowrap">专注空间</span>}
           </button>
         </div>
 
