@@ -20,12 +20,18 @@ import {
   EyeOff,
   Bell,
   ArrowUpDown,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  ArrowLeftRight,
+  Upload,
 } from "lucide-react";
 import { format, isSameDay, addDays } from "date-fns";
 import { zhCN } from "date-fns/locale";
 
 /* ═══════════════ Types ═══════════════ */
 export type CalendarSourceType = "google" | "apple" | "outlook" | "caldav" | "lifenix";
+
+export type SyncDirection = "read" | "write" | "bidirectional";
 
 export interface CalendarSource {
   id: string;
@@ -39,6 +45,8 @@ export interface CalendarSource {
   lastSync?: Date;
   eventCount?: number;
   visible: boolean;
+  syncDirection: SyncDirection;
+  pushCount?: number; // events pushed TO this calendar
 }
 
 export interface ExternalEvent {
@@ -79,6 +87,8 @@ const defaultSources: CalendarSource[] = [
     lastSync: new Date(),
     eventCount: 12,
     visible: true,
+    syncDirection: "bidirectional",
+    pushCount: 5,
   },
   {
     id: "google-main",
@@ -90,6 +100,7 @@ const defaultSources: CalendarSource[] = [
     icon: "G",
     connected: false,
     visible: true,
+    syncDirection: "read",
   },
   {
     id: "apple-icloud",
@@ -101,6 +112,7 @@ const defaultSources: CalendarSource[] = [
     icon: "",
     connected: false,
     visible: true,
+    syncDirection: "read",
   },
   {
     id: "outlook-work",
@@ -112,6 +124,7 @@ const defaultSources: CalendarSource[] = [
     icon: "O",
     connected: false,
     visible: true,
+    syncDirection: "read",
   },
   {
     id: "caldav-custom",
@@ -122,6 +135,7 @@ const defaultSources: CalendarSource[] = [
     icon: "C",
     connected: false,
     visible: true,
+    syncDirection: "read",
   },
 ];
 
@@ -342,6 +356,12 @@ export function CalendarSync({ open, onClose, onEventsUpdate, onConflictsUpdate 
   const toggleVisibility = (id: string) => {
     setSources((prev) =>
       prev.map((s) => (s.id === id ? { ...s, visible: !s.visible } : s))
+    );
+  };
+
+  const changeSyncDirection = (id: string, dir: SyncDirection) => {
+    setSources((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, syncDirection: dir } : s))
     );
   };
 
@@ -600,6 +620,58 @@ export function CalendarSync({ open, onClose, onEventsUpdate, onConflictsUpdate 
                             )}
                           </div>
                         </div>
+
+                        {/* ── Sync Direction Row ── */}
+                        {source.connected && source.type !== "lifenix" && (
+                          <div className="mt-3 pt-3 border-t border-border/20">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[0.6875rem] text-muted-foreground" style={{ fontWeight: 500 }}>同步方向</span>
+                              <div className="flex gap-0.5 rounded-lg bg-muted/40 p-0.5">
+                                {([
+                                  { key: "read" as SyncDirection, label: "仅读取", icon: ArrowDownToLine, tip: "只从外部读取到 Lifenix" },
+                                  { key: "bidirectional" as SyncDirection, label: "双向", icon: ArrowLeftRight, tip: "Lifenix ↔ 外部互相同步" },
+                                  { key: "write" as SyncDirection, label: "仅推送", icon: ArrowUpFromLine, tip: "只从 Lifenix 推送到外部" },
+                                ]).map((d) => (
+                                  <button
+                                    key={d.key}
+                                    onClick={() => changeSyncDirection(source.id, d.key)}
+                                    title={d.tip}
+                                    className={`flex items-center gap-1 rounded-md px-2 py-1 text-[0.625rem] transition-all ${
+                                      source.syncDirection === d.key
+                                        ? "bg-white text-primary shadow-sm"
+                                        : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                    style={{ fontWeight: source.syncDirection === d.key ? 600 : 400 }}
+                                  >
+                                    <d.icon className="h-3 w-3" />
+                                    <span className="hidden sm:inline">{d.label}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            {source.syncDirection === "bidirectional" && (
+                              <div className="mt-1.5 flex items-center gap-1 text-[0.5625rem] text-primary/70">
+                                <ArrowLeftRight className="h-2.5 w-2.5" />
+                                Lifenix AI 日程将自动同步到 {source.name}，{source.name} 的会议也会显示在 Lifenix 中
+                              </div>
+                            )}
+                            {source.syncDirection === "write" && (
+                              <div className="mt-1.5 flex items-center gap-1 text-[0.5625rem] text-amber-600/70">
+                                <ArrowUpFromLine className="h-2.5 w-2.5" />
+                                仅将 Lifenix 创建的日程推送到 {source.name}
+                                {source.pushCount !== undefined && source.pushCount > 0 && (
+                                  <span> · 已推送 {source.pushCount} 个日程</span>
+                                )}
+                              </div>
+                            )}
+                            {source.syncDirection === "read" && (
+                              <div className="mt-1.5 flex items-center gap-1 text-[0.5625rem] text-muted-foreground/60">
+                                <ArrowDownToLine className="h-2.5 w-2.5" />
+                                仅读取 {source.name} 的日程到 Lifenix，不会修改外部日历
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </motion.div>
                     ))}
                   </motion.div>

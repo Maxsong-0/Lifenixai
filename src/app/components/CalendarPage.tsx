@@ -58,8 +58,14 @@ import {
   Filter,
   SlidersHorizontal,
   Link2,
+  Mail,
+  Crown,
+  ChevronDown,
+  Wrench,
 } from "lucide-react";
 import { CalendarSync, ConflictBanner, type ExternalEvent, type ConflictInfo } from "./CalendarSync";
+import { EmailAggregator } from "./EmailAggregator";
+import { MeetingAssistant } from "./MeetingAssistant";
 
 /* ═══════════════ Types ═══════════════ */
 type ViewType = "calendar" | "list" | "kanban" | "timeline";
@@ -192,6 +198,10 @@ export function CalendarPage() {
   const [newEventTitle, setNewEventTitle] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null);
   const [showSync, setShowSync] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
+  const [showMeeting, setShowMeeting] = useState(false);
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
+  const toolsMenuRef = useRef<HTMLDivElement>(null);
   const [externalEvents, setExternalEvents] = useState<ExternalEvent[]>([]);
   const [calConflicts, setCalConflicts] = useState<ConflictInfo[]>([]);
   const aiEndRef = useRef<HTMLDivElement>(null);
@@ -199,6 +209,17 @@ export function CalendarPage() {
   useEffect(() => {
     aiEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [aiMessages]);
+
+  // Close tools menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (toolsMenuRef.current && !toolsMenuRef.current.contains(e.target as Node)) {
+        setShowToolsMenu(false);
+      }
+    };
+    if (showToolsMenu) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showToolsMenu]);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -285,7 +306,7 @@ export function CalendarPage() {
   return (
     <div className="flex h-full flex-col bg-background">
       {/* ───── Top Bar ───── */}
-      <div className="shrink-0 border-b border-border/50 bg-white/80 backdrop-blur-sm px-3 py-2.5 sm:px-6 sm:py-3">
+      <div className="relative z-40 shrink-0 border-b border-border/50 bg-white/80 backdrop-blur-sm px-3 py-2.5 sm:px-6 sm:py-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar">
             {/* View switcher */}
@@ -335,7 +356,7 @@ export function CalendarPage() {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Focus Mode */}
+            {/* Focus Mode – stays visible as a standalone toggle */}
             <button
               onClick={() => setFocusMode(!focusMode)}
               className={`flex items-center gap-1.5 rounded-xl px-2 sm:px-3 py-1.5 text-[0.75rem] sm:text-[0.8125rem] transition-all ${
@@ -349,39 +370,110 @@ export function CalendarPage() {
               <span className="hidden sm:inline">{focusMode ? "专注中" : "专注"}</span>
             </button>
 
-            {/* AI Button */}
-            <button
-              onClick={() => setShowAI(!showAI)}
-              className={`hidden md:flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[0.8125rem] transition-all ${
-                showAI
-                  ? "bg-primary/10 text-primary shadow-sm"
-                  : "text-muted-foreground hover:bg-muted/60"
-              }`}
-              style={{ fontWeight: showAI ? 600 : 400 }}
-            >
-              <Brain className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">AI 排期</span>
-            </button>
+            {/* ── Tools Dropdown ── */}
+            <div className="relative z-50" ref={toolsMenuRef}>
+              <button
+                onClick={() => setShowToolsMenu((v) => !v)}
+                className={`flex items-center gap-1.5 rounded-xl px-2 sm:px-3 py-1.5 text-[0.75rem] sm:text-[0.8125rem] transition-all ${
+                  showToolsMenu || showAI || externalEvents.length > 0
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted/60"
+                }`}
+                style={{ fontWeight: showToolsMenu ? 600 : 400 }}
+              >
+                <Wrench className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">工具</span>
+                {externalEvents.length > 0 && (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 text-white text-[0.5625rem] px-1" style={{ fontWeight: 600 }}>
+                    {externalEvents.length}
+                  </span>
+                )}
+                <ChevronDown className={`h-3 w-3 transition-transform ${showToolsMenu ? "rotate-180" : ""}`} />
+              </button>
 
-            {/* Calendar Sync */}
-            <button
-              onClick={() => setShowSync(true)}
-              className={`flex items-center gap-1.5 rounded-xl px-2 sm:px-3 py-1.5 text-[0.75rem] sm:text-[0.8125rem] transition-all ${
-                externalEvents.length > 0
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "text-muted-foreground hover:bg-muted/60"
-              }`}
-              style={{ fontWeight: externalEvents.length > 0 ? 500 : 400 }}
-              title="跨平台日历聚合"
-            >
-              <Link2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">聚合</span>
-              {externalEvents.length > 0 && (
-                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 text-white text-[0.5625rem] px-1" style={{ fontWeight: 600 }}>
-                  {externalEvents.length}
-                </span>
-              )}
-            </button>
+              <AnimatePresence>
+                {showToolsMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full z-[999] mt-1.5 w-56 rounded-xl border border-border/50 bg-white p-1.5 shadow-lg"
+                  >
+                    {/* AI 排期 */}
+                    <button
+                      onClick={() => { setShowAI(!showAI); setShowToolsMenu(false); }}
+                      className={`w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[0.8125rem] text-left transition-colors ${
+                        showAI ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${showAI ? "bg-primary/15" : "bg-muted/50"}`}>
+                        <Brain className={`h-3.5 w-3.5 ${showAI ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div style={{ fontWeight: 500 }}>AI 智能排期</div>
+                        <div className="text-[0.6875rem] text-muted-foreground">自然语言创建与优化日程</div>
+                      </div>
+                      {showAI && <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />}
+                    </button>
+
+                    {/* 邮件聚合 */}
+                    <button
+                      onClick={() => { setShowEmail(true); setShowToolsMenu(false); }}
+                      className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[0.8125rem] text-left text-foreground hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+                        <Mail className="h-3.5 w-3.5 text-blue-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div style={{ fontWeight: 500 }}>邮件智能聚合</div>
+                        <div className="text-[0.6875rem] text-muted-foreground">扫描行程单、邀请函、账单</div>
+                      </div>
+                    </button>
+
+                    {/* 会议辅助 */}
+                    <button
+                      onClick={() => { setShowMeeting(true); setShowToolsMenu(false); }}
+                      className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[0.8125rem] text-left text-foreground hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
+                        <Video className="h-3.5 w-3.5 text-indigo-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5" style={{ fontWeight: 500 }}>
+                          会议辅助
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-px text-[0.5625rem] text-amber-700">
+                            <Crown className="h-2 w-2" /> Pro
+                          </span>
+                        </div>
+                        <div className="text-[0.6875rem] text-muted-foreground">录音摘要、自动提取任务</div>
+                      </div>
+                    </button>
+
+                    <div className="mx-2 my-1 h-px bg-border/30" />
+
+                    {/* 日历聚合 */}
+                    <button
+                      onClick={() => { setShowSync(true); setShowToolsMenu(false); }}
+                      className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[0.8125rem] text-left text-foreground hover:bg-muted/50 transition-colors"
+                    >
+                      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${externalEvents.length > 0 ? "bg-emerald-50" : "bg-muted/50"}`}>
+                        <Link2 className={`h-3.5 w-3.5 ${externalEvents.length > 0 ? "text-emerald-600" : "text-muted-foreground"}`} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div style={{ fontWeight: 500 }}>跨平台日历聚合</div>
+                        <div className="text-[0.6875rem] text-muted-foreground">双向同步 · 冲突检测</div>
+                      </div>
+                      {externalEvents.length > 0 && (
+                        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 text-white text-[0.5625rem] px-1 shrink-0" style={{ fontWeight: 600 }}>
+                          {externalEvents.length}
+                        </span>
+                      )}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Add */}
             <Button
@@ -1318,6 +1410,18 @@ export function CalendarPage() {
         onClose={() => setShowSync(false)}
         onEventsUpdate={setExternalEvents}
         onConflictsUpdate={setCalConflicts}
+      />
+
+      {/* ───── Email Aggregator Modal ───── */}
+      <EmailAggregator
+        open={showEmail}
+        onClose={() => setShowEmail(false)}
+      />
+
+      {/* ───── Meeting Assistant Modal ───── */}
+      <MeetingAssistant
+        open={showMeeting}
+        onClose={() => setShowMeeting(false)}
       />
     </div>
   );
