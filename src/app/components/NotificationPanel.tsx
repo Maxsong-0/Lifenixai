@@ -9,7 +9,7 @@ import {
   CalendarDays,
   Sparkles,
   TrendingUp,
-  AlertCircle,
+  CircleAlert,
   Clock,
   Trash2,
 } from "lucide-react";
@@ -57,7 +57,7 @@ const initialNotifications: Notification[] = [
     desc: "「完成季度项目报告」今天到期，请及时完成。",
     time: "30 分钟前",
     read: false,
-    icon: AlertCircle,
+    icon: CircleAlert,
     iconColor: "text-red-500",
     iconBg: "bg-red-50",
   },

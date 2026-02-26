@@ -12,7 +12,7 @@ import {
   FileText,
   File,
   Loader2,
-  CheckCircle2,
+  CircleCheck,
   Clock,
   MapPin,
   Users,
@@ -443,7 +443,7 @@ export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
                           >
                             {item.added ? (
                               <span className="flex items-center gap-0.5">
-                                <CheckCircle2 className="h-2.5 w-2.5" /> 已加入
+                                <CircleCheck className="h-2.5 w-2.5" /> 已加入
                               </span>
                             ) : (
                               "+ 加入"

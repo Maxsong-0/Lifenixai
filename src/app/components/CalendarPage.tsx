@@ -38,7 +38,7 @@ import {
   Tag,
   Flag,
   AlertTriangle,
-  CheckCircle2,
+  CircleCheck,
   Circle,
   Timer,
   ArrowRight,
@@ -62,10 +62,12 @@ import {
   Crown,
   ChevronDown,
   Wrench,
+  Check,
 } from "lucide-react";
 import { CalendarSync, ConflictBanner, type ExternalEvent, type ConflictInfo } from "./CalendarSync";
 import { EmailAggregator } from "./EmailAggregator";
 import { MeetingAssistant } from "./MeetingAssistant";
+import { AddEventModal, type NewEventData, type AddEventPreset } from "./AddEventModal";
 
 /* ═══════════════ Types ═══════════════ */
 type ViewType = "calendar" | "list" | "kanban" | "timeline";
@@ -183,6 +185,501 @@ const statusConfig: Record<Status, { label: string; color: string }> = {
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 – 20:00
 
+/* ═══════════════ Timeline Sub-component ═══════════════ */
+type TimelineZoom = "day" | "3day" | "week";
+
+interface TimelineViewProps {
+  events: ScheduleEvent[];
+  weekDays: Date[];
+  onSelectEvent: (event: ScheduleEvent) => void;
+  onToggleStatus: (id: string) => void;
+  onDoubleClickSlot?: (preset: AddEventPreset) => void;
+}
+
+const mockDependencies: [string, string][] = [
+  ["1", "3"],
+  ["3", "4"],
+  ["8", "10"],
+];
+
+function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubleClickSlot }: TimelineViewProps) {
+  const [zoom, setZoom] = useState<TimelineZoom>("week");
+  const [hoveredEvent, setHoveredEvent] = useState<string | null>(null);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [showDeps, setShowDeps] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const barAreaRef = useRef<HTMLDivElement>(null);
+
+  const visibleDays = useMemo(() => {
+    if (zoom === "day") return weekDays.filter((d) => isToday(d)).length > 0 ? [weekDays.find((d) => isToday(d))!] : [weekDays[0]];
+    if (zoom === "3day") {
+      const todayIdx = weekDays.findIndex((d) => isToday(d));
+      const start = Math.max(0, todayIdx >= 0 ? todayIdx : 0);
+      return weekDays.slice(start, start + 3);
+    }
+    return weekDays;
+  }, [zoom, weekDays]);
+
+  const startHour = 7;
+  const endHour = 21;
+  const totalHours = endHour - startHour;
+  const totalCols = visibleDays.length * totalHours;
+  const hourWidthPx = zoom === "day" ? 100 : zoom === "3day" ? 60 : 36;
+  const totalWidth = totalCols * hourWidthPx;
+  const labelWidth = 180;
+
+  const now = new Date();
+  const nowDayIdx = visibleDays.findIndex((d) => isSameDay(d, now));
+  const nowHourFraction = now.getHours() + now.getMinutes() / 60;
+  const nowPx = nowDayIdx >= 0 && nowHourFraction >= startHour && nowHourFraction <= endHour
+    ? (nowDayIdx * totalHours + (nowHourFraction - startHour)) * hourWidthPx
+    : null;
+
+  const categorized = useMemo(() => {
+    const map = new Map<string, ScheduleEvent[]>();
+    const sorted = [...events]
+      .filter((e) => visibleDays.some((d) => isSameDay(d, e.date)))
+      .sort((a, b) => a.date.getTime() - b.date.getTime() || a.startHour - b.startHour);
+    sorted.forEach((e) => {
+      const list = map.get(e.category) || [];
+      list.push(e);
+      map.set(e.category, list);
+    });
+    return map;
+  }, [events, visibleDays]);
+
+  const categoryOrder = ["工作", "会议", "开发", "设计", "健康", "学习"];
+  const sortedCategories = [...categorized.keys()].sort(
+    (a, b) => (categoryOrder.indexOf(a) === -1 ? 99 : categoryOrder.indexOf(a)) - (categoryOrder.indexOf(b) === -1 ? 99 : categoryOrder.indexOf(b))
+  );
+
+  const categoryColors: Record<string, string> = {
+    "工作": "bg-blue-500", "会议": "bg-purple-500", "开发": "bg-cyan-500",
+    "设计": "bg-pink-500", "健康": "bg-emerald-500", "学习": "bg-rose-400",
+  };
+
+  const toggleGroup = (cat: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      next.has(cat) ? next.delete(cat) : next.add(cat);
+      return next;
+    });
+  };
+
+  const getBarStyle = (event: ScheduleEvent) => {
+    const dayIdx = visibleDays.findIndex((d) => isSameDay(d, event.date));
+    if (dayIdx < 0) return null;
+    const leftCol = dayIdx * totalHours + (event.startHour - startHour);
+    const widthCols = event.duration;
+    return {
+      left: leftCol * hourWidthPx,
+      width: Math.max(widthCols * hourWidthPx - 2, hourWidthPx * 0.3),
+    };
+  };
+
+  const getProgress = (event: ScheduleEvent) => {
+    if (!event.subtasks || event.subtasks.length === 0) {
+      return event.status === "done" ? 100 : event.status === "in_progress" ? 40 : 0;
+    }
+    const done = event.subtasks.filter((s) => s.done).length;
+    return Math.round((done / event.subtasks.length) * 100);
+  };
+
+  useEffect(() => {
+    if (nowPx !== null && scrollRef.current) {
+      scrollRef.current.scrollLeft = Math.max(0, nowPx - 200);
+    }
+  }, [nowPx, zoom]);
+
+  const flatEvents = useMemo(() => {
+    const list: { event: ScheduleEvent; rowIdx: number }[] = [];
+    let row = 0;
+    sortedCategories.forEach((cat) => {
+      row++;
+      if (!collapsedGroups.has(cat)) {
+        const evts = categorized.get(cat) || [];
+        evts.forEach((e) => {
+          list.push({ event: e, rowIdx: row });
+          row++;
+        });
+      }
+    });
+    return list;
+  }, [sortedCategories, categorized, collapsedGroups]);
+
+  const rowHeight = 44;
+  const headerRowHeight = 32;
+
+  const fmtTime = (h: number) => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
+
+  return (
+    <motion.div
+      key="timeline-view"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.25 }}
+      className="flex flex-col h-full"
+    >
+      {/* Toolbar */}
+      <div className="shrink-0 flex items-center justify-between gap-2 px-4 py-2.5 sm:px-6 border-b border-border/30 bg-white/60 backdrop-blur-sm flex-wrap">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-0.5 rounded-lg bg-muted/40 p-0.5">
+            {([
+              { key: "day" as TimelineZoom, label: "日" },
+              { key: "3day" as TimelineZoom, label: "3日" },
+              { key: "week" as TimelineZoom, label: "周" },
+            ]).map((z) => (
+              <button
+                key={z.key}
+                onClick={() => setZoom(z.key)}
+                className={`rounded-md px-2.5 py-1 text-[0.6875rem] transition-all ${
+                  zoom === z.key ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                }`}
+                style={{ fontWeight: zoom === z.key ? 600 : 400 }}
+              >
+                {z.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => {
+              if (scrollRef.current && nowPx !== null) {
+                scrollRef.current.scrollTo({ left: Math.max(0, nowPx - 200), behavior: "smooth" });
+              }
+            }}
+            className="flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/5 px-2 py-1 text-[0.6875rem] text-primary hover:bg-primary/10 transition-colors"
+            style={{ fontWeight: 500 }}
+          >
+            <Target className="h-3 w-3" />
+            今天
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowDeps(!showDeps)}
+            className={`flex items-center gap-1 rounded-lg px-2 py-1 text-[0.6875rem] transition-colors ${
+              showDeps ? "bg-primary/10 text-primary" : "bg-muted/40 text-muted-foreground"
+            }`}
+            style={{ fontWeight: 500 }}
+          >
+            <Link2 className="h-3 w-3" />
+            依赖
+          </button>
+          <div className="hidden sm:flex items-center gap-3 text-[0.6875rem] text-muted-foreground">
+            <span>{events.filter((e) => visibleDays.some((d) => isSameDay(d, e.date))).length} 个日程</span>
+            <span>·</span>
+            <span>{events.filter((e) => visibleDays.some((d) => isSameDay(d, e.date)) && e.status === "done").length} 已完成</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 overflow-hidden flex">
+        {/* Left labels */}
+        <div className="shrink-0 border-r border-border/40 bg-white" style={{ width: labelWidth }}>
+          <div className="h-[60px] border-b border-border/40 px-3 flex items-end pb-1.5">
+            <span className="text-[0.625rem] text-muted-foreground/50">分类 / 任务</span>
+          </div>
+          <div className="overflow-y-auto" style={{ maxHeight: "calc(100% - 60px)" }}>
+            {sortedCategories.map((cat) => {
+              const catEvents = categorized.get(cat) || [];
+              const isCollapsed = collapsedGroups.has(cat);
+              const catColor = categoryColors[cat] || "bg-gray-400";
+              return (
+                <div key={cat}>
+                  <button
+                    onClick={() => toggleGroup(cat)}
+                    className="flex w-full items-center gap-2 px-3 hover:bg-muted/30 transition-colors"
+                    style={{ height: headerRowHeight }}
+                  >
+                    <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${isCollapsed ? "-rotate-90" : ""}`} />
+                    <div className={`h-2 w-2 rounded-full ${catColor}`} />
+                    <span className="text-[0.6875rem] text-muted-foreground truncate" style={{ fontWeight: 600 }}>{cat}</span>
+                    <Badge className="ml-auto bg-muted/50 text-muted-foreground text-[0.5rem] h-3.5 px-1 hover:bg-muted/50">{catEvents.length}</Badge>
+                  </button>
+                  <AnimatePresence>
+                    {!isCollapsed && catEvents.map((event) => {
+                      const progress = getProgress(event);
+                      const isHovered = hoveredEvent === event.id;
+                      const prioColor = event.priority === "urgent" ? "bg-red-500" : event.priority === "high" ? "bg-orange-400" : event.priority === "medium" ? "bg-blue-400" : "bg-gray-300";
+                      return (
+                        <motion.div
+                          key={event.id}
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: rowHeight }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className={`flex items-center gap-2 px-3 border-b border-border/10 cursor-pointer transition-colors ${isHovered ? "bg-primary/5" : "hover:bg-muted/20"}`}
+                          style={{ height: rowHeight }}
+                          onMouseEnter={() => setHoveredEvent(event.id)}
+                          onMouseLeave={() => setHoveredEvent(null)}
+                          onClick={() => onSelectEvent(event)}
+                        >
+                          <button onClick={(e) => { e.stopPropagation(); onToggleStatus(event.id); }} className="shrink-0">
+                            {event.status === "done" ? (
+                              <div className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center">
+                                <Check className="h-2.5 w-2.5 text-white" />
+                              </div>
+                            ) : event.status === "blocked" ? (
+                              <div className="h-4 w-4 rounded-full bg-red-100 flex items-center justify-center">
+                                <AlertTriangle className="h-2.5 w-2.5 text-red-500" />
+                              </div>
+                            ) : (
+                              <Circle className={`h-4 w-4 ${event.status === "in_progress" ? "text-blue-400" : "text-muted-foreground/30"}`} />
+                            )}
+                          </button>
+                          <div className={`h-2 w-2 rounded-full shrink-0 ${prioColor}`} />
+                          <div className="flex-1 min-w-0">
+                            <span className={`truncate text-[0.6875rem] block ${event.status === "done" ? "line-through text-muted-foreground" : ""}`} style={{ fontWeight: 500 }}>{event.title}</span>
+                          </div>
+                          {progress > 0 && progress < 100 && (
+                            <span className="text-[0.5625rem] text-muted-foreground shrink-0">{progress}%</span>
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right scrollable timeline */}
+        <div ref={scrollRef} className="flex-1 overflow-x-auto overflow-y-auto">
+          <div style={{ width: totalWidth, minHeight: "100%" }} className="relative">
+            {/* Time header */}
+            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-border/40" style={{ height: 60 }}>
+              <div className="flex h-[28px] border-b border-border/20">
+                {visibleDays.map((day) => {
+                  const dayW = totalHours * hourWidthPx;
+                  const td = isToday(day);
+                  return (
+                    <div key={day.toISOString()} className={`shrink-0 flex items-center justify-center text-[0.6875rem] border-r border-border/20 ${td ? "bg-primary/5 text-primary" : "text-muted-foreground"}`} style={{ width: dayW, fontWeight: td ? 600 : 400 }}>
+                      {format(day, "M月d日 EEE", { locale: zhCN })}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex h-[32px]">
+                {visibleDays.flatMap((day) =>
+                  Array.from({ length: totalHours }, (_, h) => {
+                    const hour = startHour + h;
+                    return (
+                      <div key={`${day.toISOString()}-${hour}`} className="shrink-0 flex items-center justify-center text-[0.5625rem] text-muted-foreground/60 border-r border-border/10" style={{ width: hourWidthPx }}>
+                        {hour}:00
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Grid + bars */}
+            <div
+              ref={barAreaRef}
+              className="relative"
+              onDoubleClick={(e) => {
+                if (!onDoubleClickSlot) return;
+                // Only trigger if clicking on empty area (not on a bar)
+                if ((e.target as HTMLElement).closest("[data-event-bar]")) return;
+                const rect = barAreaRef.current?.getBoundingClientRect();
+                if (!rect) return;
+                const relX = e.clientX - rect.left + (scrollRef.current?.scrollLeft || 0);
+                const colIdx = Math.floor(relX / hourWidthPx);
+                const dayIdx = Math.floor(colIdx / totalHours);
+                const hourIdx = colIdx % totalHours;
+                if (dayIdx >= 0 && dayIdx < visibleDays.length) {
+                  onDoubleClickSlot({ date: visibleDays[dayIdx], startHour: startHour + hourIdx });
+                }
+              }}
+            >
+              {/* Vertical grid */}
+              {visibleDays.flatMap((day, di) =>
+                Array.from({ length: totalHours + 1 }, (_, h) => {
+                  const x = (di * totalHours + h) * hourWidthPx;
+                  return (
+                    <div key={`g-${di}-${h}`} className={`absolute top-0 ${h === 0 ? "border-l border-border/40" : "border-l border-border/[0.08]"}`} style={{ left: x, height: "100%" }} />
+                  );
+                })
+              )}
+
+              {/* Now line */}
+              {nowPx !== null && (
+                <div className="absolute top-0 z-20" style={{ left: nowPx, height: "100%" }}>
+                  <div className="relative h-full">
+                    <div className="absolute -top-1 -left-[5px] w-[10px] h-[10px] rounded-full bg-red-500 border-2 border-white shadow-sm" />
+                    <div className="w-[2px] h-full bg-red-500/70" />
+                  </div>
+                </div>
+              )}
+
+              {/* Categories + bars */}
+              {sortedCategories.map((cat) => {
+                const catEvents = categorized.get(cat) || [];
+                const isCollapsed = collapsedGroups.has(cat);
+                return (
+                  <div key={cat}>
+                    <div className="border-b border-border/10 bg-muted/[0.03]" style={{ height: headerRowHeight }} />
+                    {!isCollapsed && catEvents.map((event, i) => {
+                      const barStyle = getBarStyle(event);
+                      if (!barStyle) return <div key={event.id} style={{ height: rowHeight }} className="border-b border-border/10" />;
+                      const progress = getProgress(event);
+                      const isHovered = hoveredEvent === event.id;
+                      const isDone = event.status === "done";
+                      const isBlocked = event.status === "blocked";
+                      return (
+                        <div
+                          key={event.id}
+                          className={`relative border-b border-border/10 transition-colors ${isHovered ? "bg-primary/[0.03]" : ""}`}
+                          style={{ height: rowHeight }}
+                          onMouseEnter={() => setHoveredEvent(event.id)}
+                          onMouseLeave={() => setHoveredEvent(null)}
+                        >
+                          <motion.div
+                            data-event-bar
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            transition={{ duration: 0.45, delay: 0.05 + i * 0.03, ease: "easeOut" }}
+                            onClick={() => onSelectEvent(event)}
+                            className={`absolute top-[6px] rounded-md cursor-pointer group origin-left transition-all ${isDone ? "opacity-50" : isBlocked ? "opacity-70" : "opacity-90 hover:opacity-100"} ${isHovered ? "shadow-md ring-2 ring-primary/20 z-10" : "shadow-sm"}`}
+                            style={{ left: barStyle.left, width: barStyle.width, height: rowHeight - 12 }}
+                          >
+                            <div className={`absolute inset-0 rounded-md ${event.color} ${isDone ? "opacity-40" : isBlocked ? "opacity-50" : ""}`} />
+                            {progress > 0 && progress < 100 && (
+                              <div className="absolute inset-y-0 left-0 rounded-l-md bg-white/20" style={{ width: `${progress}%` }} />
+                            )}
+                            {isBlocked && (
+                              <div className="absolute inset-0 rounded-md opacity-30" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.3) 4px, rgba(255,255,255,0.3) 8px)" }} />
+                            )}
+                            <div className="relative z-10 flex items-center h-full px-2 gap-1.5 min-w-0">
+                              {event.hasMeeting && <Video className="h-2.5 w-2.5 text-white/80 shrink-0" />}
+                              {event.isRecurring && <Repeat className="h-2.5 w-2.5 text-white/80 shrink-0" />}
+                              {event.aiSuggested && <Sparkles className="h-2.5 w-2.5 text-white/80 shrink-0" />}
+                              <span className="truncate text-[0.5625rem] text-white" style={{ fontWeight: 600 }}>{event.title}</span>
+                              {barStyle.width > 100 && (
+                                <span className="text-[0.5rem] text-white/60 shrink-0 ml-auto">
+                                  {fmtTime(event.startHour)} – {fmtTime(event.startHour + event.duration)}
+                                </span>
+                              )}
+                            </div>
+                            {progress > 0 && (
+                              <div className="absolute bottom-0.5 left-2 right-2 h-[2px] rounded-full bg-black/10 overflow-hidden">
+                                <div className="h-full rounded-full bg-white/60" style={{ width: `${progress}%` }} />
+                              </div>
+                            )}
+                          </motion.div>
+                          {/* Tooltip */}
+                          <AnimatePresence>
+                            {isHovered && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 4 }}
+                                className="absolute z-30 top-full mt-1 rounded-lg border border-border/50 bg-white px-3 py-2 shadow-lg pointer-events-none whitespace-nowrap"
+                                style={{ left: Math.min(barStyle.left, totalWidth - 260) }}
+                              >
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className={`h-2 w-2 rounded-full ${event.color}`} />
+                                  <span className="text-[0.75rem]" style={{ fontWeight: 600 }}>{event.title}</span>
+                                </div>
+                                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[0.625rem] text-muted-foreground">
+                                  <span>⏰ {fmtTime(event.startHour)} – {fmtTime(event.startHour + event.duration)}</span>
+                                  <span>📂 {event.category}</span>
+                                  <span>⏱ {event.duration}h</span>
+                                  {event.location && <span>📍 {event.location}</span>}
+                                  {event.subtasks && <span>✅ {event.subtasks.filter((s) => s.done).length}/{event.subtasks.length} 子任务</span>}
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <Badge className={`${statusConfig[event.status].color} text-[0.5rem] h-3.5 px-1 hover:${statusConfig[event.status].color}`}>{statusConfig[event.status].label}</Badge>
+                                  <Badge className={`${priorityConfig[event.priority].color} text-[0.5rem] h-3.5 px-1 border`}>{priorityConfig[event.priority].label}</Badge>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+
+              {/* Dependency arrows */}
+              {showDeps && (
+                <svg className="absolute inset-0 pointer-events-none" style={{ width: totalWidth, height: "100%", overflow: "visible" }}>
+                  <defs>
+                    <marker id="arrowhead" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+                      <polygon points="0 0, 6 2.5, 0 5" fill="currentColor" className="text-primary/40" />
+                    </marker>
+                  </defs>
+                  {mockDependencies.map(([fromId, toId]) => {
+                    const fromEntry = flatEvents.find((f) => f.event.id === fromId);
+                    const toEntry = flatEvents.find((f) => f.event.id === toId);
+                    if (!fromEntry || !toEntry) return null;
+                    const fromBar = getBarStyle(fromEntry.event);
+                    const toBar = getBarStyle(toEntry.event);
+                    if (!fromBar || !toBar) return null;
+                    const fromX = fromBar.left + fromBar.width;
+                    const fromY = fromEntry.rowIdx * rowHeight + rowHeight / 2;
+                    const toX = toBar.left;
+                    const toY = toEntry.rowIdx * rowHeight + rowHeight / 2;
+                    const midX = (fromX + toX) / 2;
+                    return (
+                      <path
+                        key={`dep-${fromId}-${toId}`}
+                        d={`M${fromX},${fromY} C${midX},${fromY} ${midX},${toY} ${toX},${toY}`}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 3"
+                        className="text-primary/30"
+                        markerEnd="url(#arrowhead)"
+                      />
+                    );
+                  })}
+                </svg>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom legend */}
+      <div className="shrink-0 border-t border-border/30 bg-white/80 backdrop-blur-sm px-4 py-2 sm:px-6 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex flex-wrap gap-3">
+          {sortedCategories.map((cat) => {
+            const catColor = categoryColors[cat] || "bg-gray-400";
+            const count = (categorized.get(cat) || []).length;
+            return (
+              <div key={cat} className="flex items-center gap-1.5 text-[0.6875rem] text-muted-foreground">
+                <div className={`h-2.5 w-2.5 rounded-full ${catColor}`} />
+                {cat} ({count})
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex items-center gap-3 text-[0.625rem] text-muted-foreground/60">
+          <div className="flex items-center gap-1">
+            <div className="w-4 h-[2px] bg-red-500/70 rounded" />
+            <span>当前时刻</span>
+          </div>
+          {showDeps && (
+            <div className="flex items-center gap-1">
+              <div className="w-4 h-[1.5px] border-t-[1.5px] border-dashed border-primary/30" />
+              <span>依赖关系</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1">
+            <div className="h-2 w-4 rounded-sm bg-white/20 border border-muted-foreground/20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)" }} />
+            <span>阻塞</span>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 /* ═══════════════ Component ═══════════════ */
 export function CalendarPage() {
   const [view, setView] = useState<ViewType>("calendar");
@@ -195,7 +692,7 @@ export function CalendarPage() {
     { role: "ai", text: "你好！我可以帮你智能安排日程。试试输入「明天下午三点开会」或「帮我找一个两小时的空闲时段做深度工作」。" },
   ]);
   const [showAddEvent, setShowAddEvent] = useState(false);
-  const [newEventTitle, setNewEventTitle] = useState("");
+  const [addEventPreset, setAddEventPreset] = useState<AddEventPreset | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null);
   const [showSync, setShowSync] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
@@ -294,6 +791,33 @@ export function CalendarPage() {
           : e
       )
     );
+  };
+
+  const openAddEvent = (preset?: AddEventPreset) => {
+    setAddEventPreset(preset || null);
+    setShowAddEvent(true);
+  };
+
+  const handleAddEventSubmit = (data: NewEventData) => {
+    setEvents((prev) => [
+      ...prev,
+      {
+        id: `new-${Date.now()}`,
+        title: data.title,
+        date: data.date,
+        startHour: data.startHour,
+        duration: data.duration,
+        color: data.color,
+        priority: data.priority,
+        status: "todo" as Status,
+        category: data.category,
+        tags: data.tags,
+        location: data.location || undefined,
+        isRecurring: data.isRecurring,
+        hasMeeting: data.hasMeeting,
+        aiSuggested: false,
+      },
+    ]);
   };
 
   const views = [
@@ -477,7 +1001,7 @@ export function CalendarPage() {
 
             {/* Add */}
             <Button
-              onClick={() => setShowAddEvent(true)}
+              onClick={() => openAddEvent()}
               size="sm"
               className="rounded-xl bg-primary text-white hover:bg-primary/90 text-[0.75rem] sm:text-[0.8125rem]"
             >
@@ -588,9 +1112,16 @@ export function CalendarPage() {
                         return (
                           <div
                             key={`${day.toISOString()}-${hour}`}
-                            className={`relative border-r border-b border-border/20 h-16 ${
+                            onDoubleClick={(e) => {
+                              // Calculate half-hour from click position
+                              const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                              const yRatio = (e.clientY - rect.top) / rect.height;
+                              const startH = hour + (yRatio >= 0.5 ? 0.5 : 0);
+                              openAddEvent({ date: day, startHour: startH });
+                            }}
+                            className={`relative border-r border-b border-border/20 h-16 cursor-cell ${
                               isToday(day) ? "bg-primary/[0.02]" : ""
-                            }`}
+                            } hover:bg-primary/[0.03] transition-colors`}
                           >
                             {startingEvents.map((event) => {
                               const topOffset = (event.startHour - hour) * 64;
@@ -694,7 +1225,7 @@ export function CalendarPage() {
                                 className="mt-0.5 shrink-0"
                               >
                                 {event.status === "done" ? (
-                                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                                  <CircleCheck className="h-5 w-5 text-emerald-500" />
                                 ) : (
                                   <Circle className="h-5 w-5 text-muted-foreground/40 hover:text-primary transition-colors" />
                                 )}
@@ -773,7 +1304,7 @@ export function CalendarPage() {
                                         className="flex items-center gap-2 text-[0.75rem]"
                                       >
                                         {st.done ? (
-                                          <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                          <CircleCheck className="h-3 w-3 text-emerald-500" />
                                         ) : (
                                           <Circle className="h-3 w-3 text-muted-foreground/40" />
                                         )}
@@ -932,114 +1463,15 @@ export function CalendarPage() {
               </motion.div>
             )}
 
-            {/* ═══ TIMELINE VIEW ═══ */}
+            {/* ═══ TIMELINE / GANTT VIEW ═══ */}
             {view === "timeline" && (
-              <motion.div
-                key="timeline-view"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25 }}
-                className="p-4 sm:p-6"
-              >
-                {/* Timeline header - days */}
-                <div className="mb-6 overflow-x-auto">
-                  <div className="min-w-[640px] sm:min-w-[800px]">
-                    {/* Day headers */}
-                    <div className="flex border-b border-border/40 pb-2 mb-4">
-                      <div className="w-[140px] sm:w-[200px] shrink-0" />
-                      {weekDays.map((day) => (
-                        <div
-                          key={day.toISOString()}
-                          className={`flex-1 text-center text-[0.75rem] ${
-                            isToday(day) ? "text-primary" : "text-muted-foreground"
-                          }`}
-                          style={{ fontWeight: isToday(day) ? 600 : 400 }}
-                        >
-                          {format(day, "EEE M/d", { locale: zhCN })}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Gantt bars */}
-                    <div className="space-y-2">
-                      {events
-                        .sort((a, b) => a.date.getTime() - b.date.getTime() || a.startHour - b.startHour)
-                        .map((event, i) => {
-                          const dayIndex = weekDays.findIndex((d) => isSameDay(d, event.date));
-                          if (dayIndex < 0) return null;
-
-                          const startPct = (dayIndex / 7) * 100 + (event.startHour - 7) / (14 * 7) * 100;
-                          const widthPct = (event.duration / (14 * 7)) * 100;
-
-                          return (
-                            <motion.div
-                              key={event.id}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: i * 0.04 }}
-                              className="flex items-center"
-                            >
-                              {/* Label */}
-                              <div className="w-[140px] sm:w-[200px] shrink-0 pr-2 sm:pr-3">
-                                <div className="flex items-center gap-2">
-                                  <div className={`h-2.5 w-2.5 rounded-full ${event.color}`} />
-                                  <span className="truncate text-[0.8125rem]" style={{ fontWeight: 500 }}>
-                                    {event.title}
-                                  </span>
-                                </div>
-                                <div className="ml-[18px] text-[0.6875rem] text-muted-foreground">
-                                  {event.duration}h · {event.category}
-                                </div>
-                              </div>
-
-                              {/* Bar area */}
-                              <div className="relative flex-1 h-8">
-                                {/* Grid lines */}
-                                {weekDays.map((_, di) => (
-                                  <div
-                                    key={di}
-                                    className="absolute top-0 bottom-0 border-l border-border/20"
-                                    style={{ left: `${(di / 7) * 100}%` }}
-                                  />
-                                ))}
-                                {/* Event bar */}
-                                <motion.div
-                                  initial={{ scaleX: 0 }}
-                                  animate={{ scaleX: 1 }}
-                                  transition={{ duration: 0.5, delay: 0.1 + i * 0.04 }}
-                                  onClick={() => setSelectedEvent(event)}
-                                  className={`absolute top-1 h-6 rounded-md ${event.color} cursor-pointer shadow-sm opacity-80 hover:opacity-100 transition-opacity origin-left`}
-                                  style={{
-                                    left: `${(dayIndex / 7) * 100}%`,
-                                    width: `${Math.max((event.duration / 14) * (100 / 7), 2)}%`,
-                                  }}
-                                >
-                                  <div className="px-2 truncate text-[0.5625rem] text-white leading-[24px]" style={{ fontWeight: 500 }}>
-                                    {event.duration >= 2 ? event.title : ""}
-                                  </div>
-                                </motion.div>
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Legend */}
-                <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-border/30">
-                  {["工作", "会议", "开发", "设计", "健康", "学习"].map((cat) => {
-                    const event = events.find((e) => e.category === cat);
-                    return event ? (
-                      <div key={cat} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground">
-                        <div className={`h-2.5 w-2.5 rounded-full ${event.color}`} />
-                        {cat}
-                      </div>
-                    ) : null;
-                  })}
-                </div>
-              </motion.div>
+              <TimelineView
+                events={events}
+                weekDays={weekDays}
+                onSelectEvent={setSelectedEvent}
+                onToggleStatus={toggleEventStatus}
+                onDoubleClickSlot={openAddEvent}
+              />
             )}
           </AnimatePresence>
         </div>
@@ -1078,7 +1510,7 @@ export function CalendarPage() {
                   {[
                     { label: "待办", value: todayEvents.filter((e) => e.status === "todo").length, icon: Target, color: "text-blue-600 bg-blue-50" },
                     { label: "进行中", value: todayEvents.filter((e) => e.status === "in_progress").length, icon: Flame, color: "text-amber-600 bg-amber-50" },
-                    { label: "已完成", value: completedToday, icon: CheckCircle2, color: "text-emerald-600 bg-emerald-50" },
+                    { label: "已完成", value: completedToday, icon: CircleCheck, color: "text-emerald-600 bg-emerald-50" },
                   ].map((s) => (
                     <div key={s.label} className={`rounded-lg p-2 text-center ${s.color.split(" ")[1]}`}>
                       <div className={`text-[1rem] ${s.color.split(" ")[0]}`} style={{ fontWeight: 700 }}>{s.value}</div>
@@ -1248,7 +1680,7 @@ export function CalendarPage() {
                       {selectedEvent.subtasks.map((st) => (
                         <div key={st.id} className="flex items-center gap-2 text-[0.8125rem]">
                           {st.done ? (
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            <CircleCheck className="h-4 w-4 text-emerald-500" />
                           ) : (
                             <Circle className="h-4 w-4 text-muted-foreground/40" />
                           )}
@@ -1293,116 +1725,13 @@ export function CalendarPage() {
         )}
       </AnimatePresence>
 
-      {/* ───── Quick Add Event Modal ───── */}
-      <AnimatePresence>
-        {showAddEvent && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-[2px]"
-              onClick={() => setShowAddEvent(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="fixed left-1/2 top-[8%] sm:top-[15%] z-[81] w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-border/50 bg-white p-4 sm:p-6 shadow-2xl"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[1.125rem]" style={{ fontWeight: 600 }}>新建日程</h2>
-                <button
-                  onClick={() => setShowAddEvent(false)}
-                  className="rounded-lg p-1 text-muted-foreground hover:bg-muted/60 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[0.8125rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>
-                    标题（支持自然语言）
-                  </label>
-                  <div className="relative">
-                    <Input
-                      value={newEventTitle}
-                      onChange={(e) => setNewEventTitle(e.target.value)}
-                      placeholder="例：明天下午两点半团队会议"
-                      className="rounded-xl pr-10"
-                    />
-                    <Sparkles className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/50" />
-                  </div>
-                  <p className="mt-1 text-[0.6875rem] text-muted-foreground/60">
-                    AI 会自动识别时间、地点和参与者
-                  </p>
-                </div>
-
-                {newEventTitle && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-xl bg-primary/5 border border-primary/20 p-3"
-                  >
-                    <div className="flex items-center gap-1.5 text-[0.75rem] text-primary mb-1" style={{ fontWeight: 500 }}>
-                      <Sparkles className="h-3 w-3" /> AI 解析结果
-                    </div>
-                    <div className="text-[0.8125rem] space-y-1">
-                      <div className="flex items-center gap-2">
-                        <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>明天 · {format(addDays(today, 1), "M月d日 EEEE", { locale: zhCN })}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>14:30 – 15:30（1小时）</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>分类：会议 · 优先级：中</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    onClick={() => {
-                      if (newEventTitle.trim()) {
-                        setEvents((prev) => [
-                          ...prev,
-                          {
-                            id: Date.now().toString(),
-                            title: newEventTitle.trim().replace(/明天|下午|两点半|团队/g, "").trim() || newEventTitle.trim(),
-                            date: addDays(today, 1),
-                            startHour: 14.5,
-                            duration: 1,
-                            color: "bg-indigo-500",
-                            priority: "medium",
-                            status: "todo",
-                            category: "会议",
-                            tags: ["会议"],
-                            aiSuggested: true,
-                          },
-                        ]);
-                        setNewEventTitle("");
-                        setShowAddEvent(false);
-                      }
-                    }}
-                    className="flex-1 rounded-xl bg-primary text-white hover:bg-primary/90"
-                  >
-                    <Sparkles className="mr-1.5 h-3.5 w-3.5" /> AI 创建
-                  </Button>
-                  <Button variant="outline" className="rounded-xl" onClick={() => setShowAddEvent(false)}>
-                    取消
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* ───── Add Event Modal ───── */}
+      <AddEventModal
+        open={showAddEvent}
+        onClose={() => { setShowAddEvent(false); setAddEventPreset(null); }}
+        onSubmit={handleAddEventSubmit}
+        preset={addEventPreset}
+      />
 
       {/* ───── Calendar Sync Modal ───── */}
       <CalendarSync

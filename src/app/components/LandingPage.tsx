@@ -11,7 +11,7 @@ import {
   Zap,
   Shield,
   ArrowRight,
-  CheckCircle2,
+  CircleCheck,
   Star,
   Users,
   Globe,
@@ -182,7 +182,7 @@ const testimonials = [
 
 const stats = [
   { value: "100K+", label: "活跃用户", icon: Users },
-  { value: "50M+", label: "任务完成", icon: CheckCircle2 },
+  { value: "50M+", label: "任务完成", icon: CircleCheck },
   { value: "30+", label: "覆盖国家", icon: Globe },
   { value: "4.9", label: "用户评分", icon: Star },
 ];
@@ -409,7 +409,7 @@ export function LandingPage() {
                   >
                     {f.details.map((d, j) => (
                       <div key={j} className="flex items-start gap-2">
-                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                        <CircleCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                         <span className="text-[0.8125rem] text-muted-foreground leading-relaxed">{d}</span>
                       </div>
                     ))}

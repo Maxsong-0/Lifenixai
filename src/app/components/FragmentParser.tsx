@@ -15,8 +15,8 @@ import {
   Users,
   CalendarDays,
   ListTodo,
-  CheckCircle2,
-  AlertCircle,
+  CircleCheck,
+  CircleAlert,
   Copy,
   Plus,
   ChevronRight,
@@ -658,7 +658,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                                   style={{ fontWeight: 600 }}
                                 >
                                   {active && parseProgress >= (i === 3 ? 100 : (i + 1) * 30) ? (
-                                    <CheckCircle2 className="h-3 w-3" />
+                                    <CircleCheck className="h-3 w-3" />
                                   ) : active ? (
                                     <Loader2 className="h-3 w-3 animate-spin" />
                                   ) : (
@@ -693,7 +693,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                   >
                     {/* Summary header */}
                     <div className="flex items-start gap-3 rounded-xl bg-emerald-50 border border-emerald-200/50 p-3 sm:p-4">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <CircleCheck className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <div className="text-[0.8125rem] text-emerald-700" style={{ fontWeight: 600 }}>
                           解析完成 · 提取 {chatResults.length} 条日程
@@ -738,7 +738,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                           </div>
                           {result.added ? (
                             <Badge className="bg-emerald-100 text-emerald-600 text-[0.5625rem] gap-0.5 shrink-0">
-                              <CheckCircle2 className="h-2.5 w-2.5" /> 已加入
+                              <CircleCheck className="h-2.5 w-2.5" /> 已加入
                             </Badge>
                           ) : (
                             <Button
@@ -958,7 +958,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                             {/* Add button */}
                             {item.added ? (
                               <Badge className="bg-emerald-100 text-emerald-600 text-[0.5625rem] gap-0.5 shrink-0">
-                                <CheckCircle2 className="h-2.5 w-2.5" /> 已加入
+                                <CircleCheck className="h-2.5 w-2.5" /> 已加入
                               </Badge>
                             ) : (
                               <button
@@ -993,7 +993,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                     className="flex flex-col items-center py-16 text-center"
                   >
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 mb-4">
-                      <AlertCircle className="h-7 w-7 text-red-500" />
+                      <CircleAlert className="h-7 w-7 text-red-500" />
                     </div>
                     <div className="text-[0.9375rem] text-foreground" style={{ fontWeight: 600 }}>
                       解析失败

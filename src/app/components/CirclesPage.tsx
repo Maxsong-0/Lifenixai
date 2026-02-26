@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import { CircleSchedule } from "./CircleSchedule";
 import { CircleTasks } from "./CircleTasks";
+import { CirclePrivacy } from "./CirclePrivacy";
 
 /* ═══════════════ Types ═══════════════ */
 interface Member {
@@ -195,6 +196,7 @@ export function CirclesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showMobileList, setShowMobileList] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   // Chat state
   const [chatInput, setChatInput] = useState("");
@@ -592,6 +594,14 @@ export function CirclesPage() {
                 </div>
 
                 <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                  <button
+                    onClick={() => setShowPrivacyModal(true)}
+                    className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.75rem] text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
+                    title="权限与隐私"
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">隐私</span>
+                  </button>
                   <button
                     onClick={() => setShowInviteModal(true)}
                     className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.75rem] text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
@@ -1119,11 +1129,24 @@ export function CirclesPage() {
                             <Eye className="h-4 w-4 text-muted-foreground" />
                             <div>
                               <div className="text-[0.8125rem]" style={{ fontWeight: 500 }}>知识库可见性</div>
-                              <div className="text-[0.6875rem] text-muted-foreground">所有成员可查看和编辑共享知识</div>
+                              <div className="text-[0.6875rem] text-muted-foreground">所有��员可查看和编辑共享知识</div>
                             </div>
                           </div>
                           <Switch checked={true} />
                         </div>
+                        <button
+                          onClick={() => setShowPrivacyModal(true)}
+                          className="flex w-full items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 hover:bg-primary/10 transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Shield className="h-4 w-4 text-primary" />
+                            <div className="text-left">
+                              <div className="text-[0.8125rem] text-primary" style={{ fontWeight: 500 }}>权限与隐私设置</div>
+                              <div className="text-[0.6875rem] text-muted-foreground">日历可见性、AI 权限、极简模式</div>
+                            </div>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-primary" />
+                        </button>
                       </div>
                     </div>
                   </motion.div>
@@ -1150,6 +1173,17 @@ export function CirclesPage() {
           </div>
         )}
       </div>
+
+      {/* ═══ Privacy Modal ═══ */}
+      <AnimatePresence>
+        {showPrivacyModal && selectedCircle && (
+          <CirclePrivacy
+            members={selectedCircle.members}
+            circleType={selectedCircle.type}
+            onClose={() => setShowPrivacyModal(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ═══ Create Circle Modal ═══ */}
       <AnimatePresence>

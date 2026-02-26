@@ -1,6 +1,8 @@
 import { CalendarPage } from "./CalendarPage";
 import { FragmentParser } from "./FragmentParser";
 import { CirclesPage } from "./CirclesPage";
+import { AddTaskModal, AISettingsPanel } from "./AddTaskModal";
+import type { NewTaskData } from "./AddTaskModal";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -124,7 +126,7 @@ export function Dashboard() {
   const [currentDate] = useState(new Date());
 
   // Settings state
-  const [settingsSection, setSettingsSection] = useState<"profile" | "notifications" | "appearance" | "security" | "data">("profile");
+  const [settingsSection, setSettingsSection] = useState<"profile" | "notifications" | "appearance" | "security" | "data" | "ai">("profile");
   const [profileName, setProfileName] = useState(user?.name || "");
   const [profileEmail] = useState(user?.email || "");
   const [notifEmail, setNotifEmail] = useState(true);
@@ -142,6 +144,7 @@ export function Dashboard() {
 
   // Fragment Parser state
   const [showParser, setShowParser] = useState(false);
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
 
   const completedCount = tasks.filter((t) => t.completed).length;
   const progress = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
@@ -170,6 +173,7 @@ export function Dashboard() {
     { key: "profile" as const, label: "个人资料", icon: User },
     { key: "notifications" as const, label: "通知偏好", icon: Bell },
     { key: "appearance" as const, label: "外观主题", icon: Palette },
+    { key: "ai" as const, label: "AI 配置", icon: Sparkles },
     { key: "security" as const, label: "安全隐私", icon: Shield },
     { key: "data" as const, label: "数据管理", icon: Download },
   ];
@@ -257,7 +261,7 @@ export function Dashboard() {
                     onKeyDown={(e) => e.key === "Enter" && addTask()}
                     className="rounded-xl"
                   />
-                  <Button onClick={addTask} size="icon" className="shrink-0 rounded-xl bg-primary text-white hover:bg-primary/90">
+                  <Button onClick={() => setShowAddTaskModal(true)} size="icon" className="shrink-0 rounded-xl bg-primary text-white hover:bg-primary/90">
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
@@ -592,6 +596,8 @@ export function Dashboard() {
                     </motion.div>
                   )}
 
+                  {settingsSection === "ai" && <AISettingsPanel />}
+
                   {settingsSection === "security" && (
                     <motion.div key="security" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
                       <h2 className="text-[1.25rem] mb-1" style={{ fontWeight: 600 }}>安全隐私</h2>
@@ -783,6 +789,26 @@ export function Dashboard() {
             },
           ]);
         }}
+      />
+
+      {/* Add Task Modal */}
+      <AddTaskModal
+        open={showAddTaskModal}
+        onClose={() => setShowAddTaskModal(false)}
+        onSubmit={(taskData: NewTaskData) => {
+          setTasks((prev) => [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              text: taskData.text,
+              completed: false,
+              priority: taskData.priority,
+              category: taskData.category,
+            },
+          ]);
+          setNewTask("");
+        }}
+        initialText={newTask}
       />
     </div>
   );

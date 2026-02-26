@@ -12,7 +12,7 @@ import {
   EyeOff,
   ArrowRight,
   Loader2,
-  CheckCircle2,
+  CircleCheck,
 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -282,7 +282,7 @@ export function RegisterPage() {
                 <div className="mt-2 space-y-1">
                   {passwordChecks.map((check) => (
                     <div key={check.label} className="flex items-center gap-1.5">
-                      <CheckCircle2
+                      <CircleCheck
                         className={`h-3 w-3 ${check.valid ? "text-emerald-500" : "text-muted-foreground/30"}`}
                       />
                       <span
@@ -315,7 +315,7 @@ export function RegisterPage() {
               )}
               {confirmPwd.length > 0 && password === confirmPwd && confirmPwd.length >= 6 && (
                 <p className="mt-1 text-[0.75rem] text-emerald-600 flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" /> 密码一致
+                  <CircleCheck className="h-3 w-3" /> 密码一致
                 </p>
               )}
             </div>

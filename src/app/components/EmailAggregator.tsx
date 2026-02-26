@@ -12,7 +12,6 @@ import {
   Users,
   CalendarDays,
   ListTodo,
-  CheckCircle2,
   Sparkles,
   RefreshCw,
   Shield,
@@ -29,6 +28,7 @@ import {
   FileText,
   DollarSign,
   Globe,
+  CircleCheck,
 } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { zhCN } from "date-fns/locale";
@@ -368,7 +368,7 @@ export function EmailAggregator({ open, onClose }: EmailAggregatorProps) {
                               </span>
                               {account.connected && (
                                 <Badge className="bg-emerald-50 text-emerald-600 text-[0.5625rem] px-1.5">
-                                  <CheckCircle2 className="mr-0.5 h-2.5 w-2.5" /> 已绑定
+                                  <CircleCheck className="mr-0.5 h-2.5 w-2.5" /> 已绑定
                                 </Badge>
                               )}
                             </div>
@@ -619,7 +619,7 @@ export function EmailAggregator({ open, onClose }: EmailAggregatorProps) {
                                   <div className="flex flex-col gap-1.5 shrink-0">
                                     {item.addedAsEvent ? (
                                       <Badge className="bg-emerald-100 text-emerald-600 text-[0.5625rem] gap-0.5">
-                                        <CheckCircle2 className="h-2.5 w-2.5" /> 已加入
+                                        <CircleCheck className="h-2.5 w-2.5" /> 已加入
                                       </Badge>
                                     ) : (
                                       <>

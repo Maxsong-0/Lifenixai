@@ -14,7 +14,7 @@ import {
   Users,
   Clock,
   ListTodo,
-  CheckCircle2,
+  CircleCheck,
   Sparkles,
   Crown,
   Link2,
@@ -32,7 +32,6 @@ import {
   Zap,
   Settings,
   Timer,
-  AlertCircle,
 } from "lucide-react";
 import { format, addMinutes } from "date-fns";
 import { zhCN } from "date-fns/locale";
@@ -347,7 +346,7 @@ export function MeetingAssistant({ open, onClose }: MeetingAssistantProps) {
                           {p.connected ? (
                             <div className="flex items-center gap-2">
                               <Badge className="bg-emerald-50 text-emerald-600 text-[0.5625rem]">
-                                <CheckCircle2 className="mr-0.5 h-2.5 w-2.5" /> 已连接
+                                <CircleCheck className="mr-0.5 h-2.5 w-2.5" /> 已连接
                               </Badge>
                               <div className="flex-1" />
                               <Button
@@ -534,7 +533,7 @@ export function MeetingAssistant({ open, onClose }: MeetingAssistantProps) {
                                 animate={{ scale: 1 }}
                                 transition={{ delay: i * 0.6 + 0.3 }}
                               >
-                                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                <CircleCheck className="h-4 w-4 text-emerald-500" />
                               </motion.div>
                               <span className="text-[0.8125rem] text-muted-foreground">{step}</span>
                             </motion.div>
@@ -548,7 +547,7 @@ export function MeetingAssistant({ open, onClose }: MeetingAssistantProps) {
                       <div className="space-y-4">
                         {/* Summary header */}
                         <div className="flex items-start gap-3 rounded-xl bg-emerald-50 border border-emerald-200/50 p-3 sm:p-4">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                          <CircleCheck className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                           <div className="flex-1">
                             <div className="text-[0.875rem] text-emerald-700" style={{ fontWeight: 600 }}>
                               会议摘要已生成
@@ -678,7 +677,7 @@ export function MeetingAssistant({ open, onClose }: MeetingAssistantProps) {
                                 </div>
                                 {task.added ? (
                                   <Badge className="bg-emerald-100 text-emerald-600 text-[0.5625rem] gap-0.5 shrink-0">
-                                    <CheckCircle2 className="h-2.5 w-2.5" /> 已加入
+                                    <CircleCheck className="h-2.5 w-2.5" /> 已加入
                                   </Badge>
                                 ) : (
                                   <button
