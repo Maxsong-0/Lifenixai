@@ -1,3 +1,6 @@
+import { CalendarPage } from "./CalendarPage";
+import { FragmentParser } from "./FragmentParser";
+import { CirclesPage } from "./CirclesPage";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -8,8 +11,6 @@ import { Switch } from "./ui/switch";
 import { useAuth } from "./AuthContext";
 import { useAppContext } from "./AppLayout";
 import { motion, AnimatePresence } from "motion/react";
-import { CalendarPage } from "./CalendarPage";
-import { FragmentParser } from "./FragmentParser";
 import {
   CalendarDays,
   ListTodo,
@@ -174,11 +175,14 @@ export function Dashboard() {
   ];
 
   return (
-    <div className="bg-background">
+    <div className={`bg-background ${activeTab === "calendar" || activeTab === "circles" ? "h-full" : ""}`}>
       {/* Calendar gets full-height layout without padding */}
       {activeTab === "calendar" && <CalendarPage />}
 
-      {activeTab !== "calendar" && (
+      {/* Circles gets full-height layout without padding */}
+      {activeTab === "circles" && <CirclesPage />}
+
+      {activeTab !== "calendar" && activeTab !== "circles" && (
       <div className="px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Quick Stats — only for tasks & stats */}
         {["tasks", "stats"].includes(activeTab) && (

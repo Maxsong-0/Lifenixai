@@ -18,6 +18,7 @@ import {
   Search,
   Crown,
   X,
+  Users,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { DynamicBackground } from "./DynamicBackground";
@@ -25,11 +26,12 @@ import { SearchModal } from "./SearchModal";
 import { NotificationPanel } from "./NotificationPanel";
 import { AIChatDrawer } from "./AIChatDrawer";
 
-export type DashboardTab = "tasks" | "calendar" | "stats" | "settings" | "help";
+export type DashboardTab = "tasks" | "calendar" | "circles" | "stats" | "settings" | "help";
 
 const navItems = [
   { key: "tasks" as DashboardTab, label: "任务日程", icon: ListTodo },
   { key: "calendar" as DashboardTab, label: "日程规划", icon: CalendarDays },
+  { key: "circles" as DashboardTab, label: "协作空间", icon: Users },
   { key: "stats" as DashboardTab, label: "数据统计", icon: BarChart3 },
 ];
 
