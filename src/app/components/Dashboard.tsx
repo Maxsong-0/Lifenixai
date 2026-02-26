@@ -9,6 +9,7 @@ import { useAuth } from "./AuthContext";
 import { useAppContext } from "./AppLayout";
 import { motion, AnimatePresence } from "motion/react";
 import { CalendarPage } from "./CalendarPage";
+import { FragmentParser } from "./FragmentParser";
 import {
   CalendarDays,
   ListTodo,
@@ -42,6 +43,7 @@ import {
   Zap,
   ChevronRight as ChevronR,
   Keyboard,
+  ScanText,
 } from "lucide-react";
 
 /* ─────────── Interfaces ─────────── */
@@ -137,6 +139,9 @@ export function Dashboard() {
   const [helpTab, setHelpTab] = useState<"guides" | "faq" | "contact">("guides");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
+  // Fragment Parser state
+  const [showParser, setShowParser] = useState(false);
+
   const completedCount = tasks.filter((t) => t.completed).length;
   const progress = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
 
@@ -216,7 +221,7 @@ export function Dashboard() {
                 initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.35, delay: 0.05 }}
-                className="rounded-2xl border border-border/50 bg-white p-6"
+                className="rounded-2xl border border-border/50 bg-white p-4 sm:p-6"
               >
                 <div className="mb-5 flex items-center justify-between">
                   <div>
@@ -226,6 +231,17 @@ export function Dashboard() {
                       <span className="text-[0.8125rem] text-muted-foreground">{completedCount}/{tasks.length} 已完成</span>
                     </div>
                   </div>
+                  {/* Fragment Parser trigger */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowParser(true)}
+                    className="rounded-xl text-[0.75rem] gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
+                  >
+                    <ScanText className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">截图/文档解析</span>
+                    <span className="sm:hidden">解析</span>
+                  </Button>
                 </div>
 
                 {/* Add Task */}
@@ -375,21 +391,10 @@ export function Dashboard() {
                     const vals = [85, 72, 90, progress, 0, 0, 0];
                     const isDayToday = i === currentDate.getDay() - 1;
                     return (
-                      <motion.div
-                        key={day}
-                        initial={{ opacity: 0, x: -16 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: 0.1 + i * 0.04 }}
-                        className="flex items-center gap-3"
-                      >
+                      <motion.div key={day} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.1 + i * 0.04 }} className="flex items-center gap-3">
                         <span className={`w-8 text-[0.8125rem] ${isDayToday ? "text-primary" : "text-muted-foreground"}`} style={isDayToday ? { fontWeight: 600 } : {}}>{day}</span>
                         <div className="flex-1 h-3 rounded-full bg-muted/60 overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${vals[i]}%` }}
-                            transition={{ duration: 0.6, delay: 0.2 + i * 0.05, ease: "easeOut" }}
-                            className={`h-full rounded-full ${isDayToday ? "bg-primary" : "bg-primary/40"}`}
-                          />
+                          <motion.div initial={{ width: 0 }} animate={{ width: `${vals[i]}%` }} transition={{ duration: 0.6, delay: 0.2 + i * 0.05, ease: "easeOut" }} className={`h-full rounded-full ${isDayToday ? "bg-primary" : "bg-primary/40"}`} />
                         </div>
                         <span className="w-10 text-right text-[0.8125rem] text-muted-foreground">{vals[i]}%</span>
                       </motion.div>
@@ -398,12 +403,7 @@ export function Dashboard() {
                 </div>
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
-                className="rounded-2xl border border-border/50 bg-white p-6"
-              >
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="rounded-2xl border border-border/50 bg-white p-6">
                 <h3 className="mb-4 text-[1.125rem]" style={{ fontWeight: 600 }}>任务分类分布</h3>
                 <div className="space-y-4">
                   {[
@@ -418,24 +418,14 @@ export function Dashboard() {
                         <span className="text-[0.8125rem] text-muted-foreground">{cat.count} 个任务</span>
                       </div>
                       <div className="h-2.5 rounded-full bg-muted/60 overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${(cat.count / cat.total) * 100}%` }}
-                          transition={{ duration: 0.6, delay: 0.25 + i * 0.06, ease: "easeOut" }}
-                          className={`h-full rounded-full ${cat.color}`}
-                        />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${(cat.count / cat.total) * 100}%` }} transition={{ duration: 0.6, delay: 0.25 + i * 0.06, ease: "easeOut" }} className={`h-full rounded-full ${cat.color}`} />
                       </div>
                     </motion.div>
                   ))}
                 </div>
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.15 }}
-                className="rounded-2xl border border-border/50 bg-white p-6 md:col-span-2"
-              >
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }} className="rounded-2xl border border-border/50 bg-white p-6 md:col-span-2">
                 <h3 className="mb-4 text-[1.125rem]" style={{ fontWeight: 600 }}>AI 洞察</h3>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {[
@@ -443,14 +433,7 @@ export function Dashboard() {
                     { title: "时间分配", desc: "建议减少会议时间，增加深度工作的时段。", icon: Clock, color: "text-blue-600 bg-blue-50" },
                     { title: "健康提醒", desc: "本周运动时间偏少，建议每天至少30分钟锻炼。", icon: Sparkles, color: "text-amber-600 bg-amber-50" },
                   ].map((insight, i) => (
-                    <motion.div
-                      key={insight.title}
-                      initial={{ opacity: 0, y: 16, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ duration: 0.35, delay: 0.2 + i * 0.08 }}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      className={`rounded-xl p-5 ${insight.color.split(" ")[1]}`}
-                    >
+                    <motion.div key={insight.title} initial={{ opacity: 0, y: 16, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.35, delay: 0.2 + i * 0.08 }} whileHover={{ scale: 1.02, y: -2 }} className={`rounded-xl p-5 ${insight.color.split(" ")[1]}`}>
                       <insight.icon className={`mb-2 h-6 w-6 ${insight.color.split(" ")[0]}`} />
                       <h4 className="text-[0.9375rem] mb-1" style={{ fontWeight: 600 }}>{insight.title}</h4>
                       <p className="text-[0.8125rem] text-muted-foreground">{insight.desc}</p>
@@ -463,35 +446,11 @@ export function Dashboard() {
 
           {/* ═══════════════ SETTINGS ═══════════════ */}
           {activeTab === "settings" && (
-            <motion.div
-              key="settings"
-              variants={panelVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.35, ease: "easeOut" }}
-              className="grid gap-6 lg:grid-cols-[240px_1fr]"
-            >
-              {/* Settings sidebar */}
-              <motion.div
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.05 }}
-                className="rounded-2xl border border-border/50 bg-white p-3"
-              >
+            <motion.div key="settings" variants={panelVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.35, ease: "easeOut" }} className="grid gap-6 lg:grid-cols-[240px_1fr]">
+              <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.05 }} className="rounded-2xl border border-border/50 bg-white p-3">
                 <div className="space-y-1">
                   {settingsSections.map((s, i) => (
-                    <motion.button
-                      key={s.key}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.08 + i * 0.04 }}
-                      onClick={() => setSettingsSection(s.key)}
-                      className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.875rem] transition-all ${
-                        settingsSection === s.key ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                      }`}
-                      style={{ fontWeight: settingsSection === s.key ? 600 : 400 }}
-                    >
+                    <motion.button key={s.key} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.08 + i * 0.04 }} onClick={() => setSettingsSection(s.key)} className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-[0.875rem] transition-all ${settingsSection === s.key ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`} style={{ fontWeight: settingsSection === s.key ? 600 : 400 }}>
                       <s.icon className="h-4 w-4 shrink-0" />
                       {s.label}
                     </motion.button>
@@ -499,13 +458,7 @@ export function Dashboard() {
                 </div>
               </motion.div>
 
-              {/* Settings content */}
-              <motion.div
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-                className="rounded-2xl border border-border/50 bg-white p-6"
-              >
+              <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.1 }} className="rounded-2xl border border-border/50 bg-white p-6">
                 <AnimatePresence mode="wait">
                   {settingsSection === "profile" && (
                     <motion.div key="profile" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
@@ -721,20 +674,8 @@ export function Dashboard() {
 
           {/* ═══════════════ HELP ═══════════════ */}
           {activeTab === "help" && (
-            <motion.div
-              key="help"
-              variants={panelVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.35, ease: "easeOut" }}
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 }}
-                className="mb-6 rounded-2xl border border-border/50 bg-gradient-to-br from-primary/5 via-white to-purple-50/50 p-6"
-              >
+            <motion.div key="help" variants={panelVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.35, ease: "easeOut" }}>
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="mb-6 rounded-2xl border border-border/50 bg-gradient-to-br from-primary/5 via-white to-purple-50/50 p-6">
                 <h2 className="text-[1.25rem] mb-1" style={{ fontWeight: 600 }}>帮助中心</h2>
                 <p className="text-[0.875rem] text-muted-foreground">查阅指南、常见问题，或联系支持团队获取帮助。</p>
                 <div className="mt-4 flex gap-1 rounded-xl bg-muted/40 p-1 max-w-sm">
@@ -821,6 +762,24 @@ export function Dashboard() {
         </AnimatePresence>
       </div>
       )}
+
+      {/* Fragment Parser Modal */}
+      <FragmentParser
+        open={showParser}
+        onClose={() => setShowParser(false)}
+        onAddTask={(task) => {
+          setTasks((prev) => [
+            ...prev,
+            {
+              id: `parsed-${task.id}`,
+              text: task.text,
+              completed: false,
+              priority: task.priority,
+              category: task.assignee || "AI 解析",
+            },
+          ]);
+        }}
+      />
     </div>
   );
 }
