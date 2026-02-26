@@ -19,12 +19,15 @@ import {
   Crown,
   X,
   Users,
+  Zap,
+  Target,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { DynamicBackground } from "./DynamicBackground";
 import { SearchModal } from "./SearchModal";
 import { NotificationPanel } from "./NotificationPanel";
 import { AIChatDrawer } from "./AIChatDrawer";
+import { Badge } from "./ui/badge";
 
 export type DashboardTab = "tasks" | "calendar" | "circles" | "stats" | "settings" | "help";
 
@@ -175,6 +178,31 @@ export function AppLayout() {
                 {chatOpen ? "开" : "关"}
               </div>
             )}
+          </button>
+
+          <button
+            onClick={() => navigate("/thinkclaw")}
+            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-[0.875rem] text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            style={{ fontWeight: 400 }}
+            title={collapsed ? "ThinkClaw" : undefined}
+          >
+            <Zap className="h-[1.125rem] w-[1.125rem] shrink-0" />
+            {!collapsed && <span className="whitespace-nowrap">ThinkClaw</span>}
+            {!collapsed && (
+              <Badge className="ml-auto bg-gradient-to-r from-violet-500/10 to-purple-500/10 text-primary border-0 text-[0.5625rem] px-1.5 py-0">
+                New
+              </Badge>
+            )}
+          </button>
+
+          <button
+            onClick={() => navigate("/focus")}
+            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-[0.875rem] text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            style={{ fontWeight: 400 }}
+            title={collapsed ? "专注空间" : undefined}
+          >
+            <Target className="h-[1.125rem] w-[1.125rem] shrink-0" />
+            {!collapsed && <span className="whitespace-nowrap">专注空间</span>}
           </button>
         </div>
 

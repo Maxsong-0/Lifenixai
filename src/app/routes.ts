@@ -6,6 +6,8 @@ import { Dashboard } from "./components/Dashboard";
 import { PricingPage } from "./components/PricingPage";
 import { LoginPage, RegisterPage } from "./components/AuthPage";
 import { NotFound } from "./components/NotFound";
+import { ThinkClawProtected } from "./components/ThinkClawProtected";
+import { FocusProtected } from "./components/FocusProtected";
 
 export const router = createBrowserRouter([
   {
@@ -25,5 +27,13 @@ export const router = createBrowserRouter([
     children: [
       { index: true, Component: Dashboard },
     ],
+  },
+  {
+    path: "/thinkclaw",
+    Component: ThinkClawProtected,
+  },
+  {
+    path: "/focus",
+    Component: FocusProtected,
   },
 ]);

@@ -32,15 +32,12 @@ import {
   Clock,
   Sparkles,
   Zap,
-  Focus,
   Eye,
-  EyeOff,
   Tag,
   Flag,
   AlertTriangle,
   CircleCheck,
   Circle,
-  Timer,
   ArrowRight,
   Users,
   Video,
@@ -685,7 +682,7 @@ export function CalendarPage() {
   const [view, setView] = useState<ViewType>("calendar");
   const [currentDate, setCurrentDate] = useState(today);
   const [events, setEvents] = useState<ScheduleEvent[]>(mockEvents);
-  const [focusMode, setFocusMode] = useState(false);
+  // focusMode removed — now at /focus
   const [showAI, setShowAI] = useState(false);
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState<{ role: "ai" | "user"; text: string }[]>([
@@ -880,20 +877,6 @@ export function CalendarPage() {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Focus Mode – stays visible as a standalone toggle */}
-            <button
-              onClick={() => setFocusMode(!focusMode)}
-              className={`flex items-center gap-1.5 rounded-xl px-2 sm:px-3 py-1.5 text-[0.75rem] sm:text-[0.8125rem] transition-all ${
-                focusMode
-                  ? "bg-amber-100 text-amber-700 shadow-sm"
-                  : "text-muted-foreground hover:bg-muted/60"
-              }`}
-              style={{ fontWeight: focusMode ? 600 : 400 }}
-            >
-              {focusMode ? <EyeOff className="h-3.5 w-3.5" /> : <Focus className="h-3.5 w-3.5" />}
-              <span className="hidden sm:inline">{focusMode ? "专注中" : "专注"}</span>
-            </button>
-
             {/* ── Tools Dropdown ── */}
             <div className="relative z-50" ref={toolsMenuRef}>
               <button
@@ -1020,26 +1003,7 @@ export function CalendarPage() {
           </div>
         )}
 
-        {/* Focus mode banner */}
-        <AnimatePresence>
-          {focusMode && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-3 flex items-center gap-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 px-4 py-2.5">
-                <Flame className="h-4 w-4 text-amber-600" />
-                <span className="text-[0.8125rem] text-amber-700" style={{ fontWeight: 500 }}>
-                  专注模式已开启 — 通知已静默，日历状态已设为忙碌
-                </span>
-                <Timer className="ml-auto h-4 w-4 text-amber-600" />
-                <span className="text-[0.8125rem] text-amber-600" style={{ fontWeight: 600 }}>25:00</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Focus mode removed — now a standalone page at /focus */}
       </div>
 
       {/* ───── Main Content ───── */}
