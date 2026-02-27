@@ -1,5 +1,8 @@
 import { AddTaskModal, AISettingsPanel } from "./AddTaskModal";
 import { FocusPanel } from "./FocusPanel";
+import { CalendarPage } from "./CalendarPage";
+import { FragmentParser } from "./FragmentParser";
+import { CirclesPage } from "./CirclesPage";
 import type { NewTaskData } from "./AddTaskModal";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
@@ -442,7 +445,7 @@ export function Dashboard() {
                 <h3 className="mb-4 text-[1.125rem]" style={{ fontWeight: 600 }}>AI 洞察</h3>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {[
-                    { title: "效率趋势", desc: "你本周的效率比上周提升了12%，继续保持！", icon: TrendingUp, color: "text-emerald-600 bg-emerald-50" },
+                    { title: "效率趋势", desc: "你本周��效率比上周提升了12%，继续保持！", icon: TrendingUp, color: "text-emerald-600 bg-emerald-50" },
                     { title: "时间分配", desc: "建议减少会议时间，增加深度工作的时段。", icon: Clock, color: "text-blue-600 bg-blue-50" },
                     { title: "健康提醒", desc: "本周运动时间偏少，建议每天至少30分钟锻炼。", icon: Sparkles, color: "text-amber-600 bg-amber-50" },
                   ].map((insight, i) => (

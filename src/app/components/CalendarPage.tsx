@@ -164,6 +164,16 @@ const mockEvents: ScheduleEvent[] = [
     color: "bg-violet-500", priority: "high", status: "todo", category: "设计",
     tags: ["AI", "原型"], energyLevel: "high", aiSuggested: true,
   },
+  {
+    id: "13", title: "晨跑 · 5km", date: addDays(today, 1), startHour: 6, duration: 1,
+    color: "bg-emerald-400", priority: "low", status: "todo", category: "健康",
+    tags: ["运动", "晨练"], energyLevel: "medium",
+  },
+  {
+    id: "14", title: "深夜复盘 & 日记", date: today, startHour: 22.5, duration: 0.5,
+    color: "bg-indigo-400", priority: "low", status: "todo", category: "个人",
+    tags: ["反思"], energyLevel: "low",
+  },
 ];
 
 const priorityConfig: Record<Priority, { label: string; color: string; icon: typeof Flag }> = {
@@ -180,7 +190,7 @@ const statusConfig: Record<Status, { label: string; color: string }> = {
   blocked: { label: "阻塞", color: "bg-red-100 text-red-700" },
 };
 
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 – 20:00
+const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0:00 – 23:00
 
 /* ═══════════════ Timeline Sub-component ═══════════════ */
 type TimelineZoom = "day" | "3day" | "week";
@@ -217,8 +227,8 @@ function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubl
     return weekDays;
   }, [zoom, weekDays]);
 
-  const startHour = 7;
-  const endHour = 21;
+  const startHour = 0;
+  const endHour = 24;
   const totalHours = endHour - startHour;
   const totalCols = visibleDays.length * totalHours;
   const hourWidthPx = zoom === "day" ? 100 : zoom === "3day" ? 60 : 36;
@@ -699,10 +709,23 @@ export function CalendarPage() {
   const [externalEvents, setExternalEvents] = useState<ExternalEvent[]>([]);
   const [calConflicts, setCalConflicts] = useState<ConflictInfo[]>([]);
   const aiEndRef = useRef<HTMLDivElement>(null);
+  const calendarScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     aiEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [aiMessages]);
+
+  // Auto-scroll calendar to current hour area on mount / view change
+  useEffect(() => {
+    if (view === "calendar" && calendarScrollRef.current) {
+      const now = new Date();
+      const scrollToHour = Math.max(0, now.getHours() - 2);
+      const rowHeight = 56; // h-14 = 56px
+      setTimeout(() => {
+        calendarScrollRef.current?.scrollTo({ top: scrollToHour * rowHeight, behavior: "smooth" });
+      }, 100);
+    }
+  }, [view]);
 
   // Close tools menu on outside click
   useEffect(() => {
@@ -788,6 +811,29 @@ export function CalendarPage() {
           : e
       )
     );
+  };
+
+  const toggleSubtask = (eventId: string, subtaskId: string) => {
+    setEvents((prev) =>
+      prev.map((e) => {
+        if (e.id !== eventId || !e.subtasks) return e;
+        return {
+          ...e,
+          subtasks: e.subtasks.map((st) =>
+            st.id === subtaskId ? { ...st, done: !st.done } : st
+          ),
+        };
+      })
+    );
+    setSelectedEvent((prev) => {
+      if (!prev || prev.id !== eventId || !prev.subtasks) return prev;
+      return {
+        ...prev,
+        subtasks: prev.subtasks.map((st) =>
+          st.id === subtaskId ? { ...st, done: !st.done } : st
+        ),
+      };
+    });
   };
 
   const openAddEvent = (preset?: AddEventPreset) => {
@@ -1012,44 +1058,55 @@ export function CalendarPage() {
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <AnimatePresence mode="wait">
             {/* ═══ CALENDAR VIEW ═══ */}
-            {view === "calendar" && (
+            {view === "calendar" && (() => {
+              const nowDate = new Date();
+              const nowHourFrac = nowDate.getHours() + nowDate.getMinutes() / 60;
+              const ROW_H = 56; // h-14 = 56px per hour row
+              const todayColIdx = weekDays.findIndex((d) => isToday(d));
+
+              return (
               <motion.div
                 key="calendar-view"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.25 }}
-                className="h-full"
+                className="h-full flex flex-col"
               >
-                <div className="overflow-x-auto min-w-0">
-                <div className="min-w-[700px]">
+                <div className="overflow-x-auto min-w-0 flex flex-col flex-1">
+                <div className="min-w-[700px] flex flex-col flex-1">
                 {/* Week header */}
-                <div className="sticky top-0 z-10 grid grid-cols-[48px_repeat(7,1fr)] sm:grid-cols-[60px_repeat(7,1fr)] border-b border-border/50 bg-white">
-                  <div className="border-r border-border/30" />
+                <div className="sticky top-0 z-20 grid grid-cols-[48px_repeat(7,1fr)] sm:grid-cols-[60px_repeat(7,1fr)] border-b border-border/40 bg-white/95 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                  <div className="border-r border-border/20 flex items-end justify-center pb-2">
+                    <span className="text-[0.625rem] text-muted-foreground/50 uppercase tracking-wider">GMT+8</span>
+                  </div>
                   {weekDays.map((day) => {
                     const isT = isToday(day);
                     const dayEvents = getAllEventsForDay(day);
                     return (
                       <div
                         key={day.toISOString()}
-                        className={`border-r border-border/30 px-2 py-2.5 text-center ${isT ? "bg-primary/5" : ""}`}
+                        className={`border-r border-border/20 px-2 py-3 text-center transition-colors ${isT ? "bg-primary/[0.04]" : ""}`}
                       >
-                        <div className="text-[0.6875rem] text-muted-foreground">
+                        <div className={`text-[0.6875rem] uppercase tracking-wide ${isT ? "text-primary" : "text-muted-foreground/70"}`}>
                           {format(day, "EEE", { locale: zhCN })}
                         </div>
                         <div
-                          className={`mx-auto mt-0.5 flex h-8 w-8 items-center justify-center rounded-full text-[0.9375rem] ${
-                            isT ? "bg-primary text-white" : ""
+                          className={`mx-auto mt-1 flex h-9 w-9 items-center justify-center rounded-full text-[0.9375rem] transition-all ${
+                            isT ? "bg-primary text-white shadow-md shadow-primary/25" : "hover:bg-muted/50"
                           }`}
                           style={{ fontWeight: isT ? 700 : 500 }}
                         >
                           {format(day, "d")}
                         </div>
                         {dayEvents.length > 0 && (
-                          <div className="mt-1 flex justify-center gap-0.5">
-                            {dayEvents.slice(0, 3).map((e) => (
-                              <div key={e.id} className={`h-1 w-1 rounded-full ${e.color}`} />
+                          <div className="mt-1.5 flex justify-center gap-1">
+                            {dayEvents.slice(0, 4).map((e) => (
+                              <div key={e.id} className={`h-1.5 w-1.5 rounded-full ${e.color} ring-1 ring-white`} />
                             ))}
+                            {dayEvents.length > 4 && (
+                              <span className="text-[0.5rem] text-muted-foreground/50">+{dayEvents.length - 4}</span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1057,59 +1114,81 @@ export function CalendarPage() {
                   })}
                 </div>
 
-                {/* Time grid */}
-                <div className="grid grid-cols-[48px_repeat(7,1fr)] sm:grid-cols-[60px_repeat(7,1fr)]">
-                  {HOURS.map((hour) => (
+                {/* Time grid - scrollable */}
+                <div className="flex-1 overflow-y-auto relative" ref={calendarScrollRef}>
+                  <div className="grid grid-cols-[48px_repeat(7,1fr)] sm:grid-cols-[60px_repeat(7,1fr)] relative">
+                  {HOURS.map((hour) => {
+                    const isWorkHour = hour >= 8 && hour < 18;
+                    const isNightHour = hour >= 22 || hour < 6;
+                    return (
                     <div key={hour} className="contents">
-                      <div className="border-r border-border/30 py-0 pr-2 text-right">
-                        <span className="relative -top-2.5 text-[0.6875rem] text-muted-foreground/60">
+                      <div className={`border-r border-border/20 py-0 pr-2 text-right h-14 relative ${isNightHour ? "bg-slate-50/50" : ""}`}>
+                        <span className={`relative -top-2 text-[0.6875rem] ${isWorkHour ? "text-muted-foreground/80" : "text-muted-foreground/40"}`}>
                           {hour.toString().padStart(2, "0")}:00
                         </span>
                       </div>
                       {weekDays.map((day) => {
                         const dayEvents = getAllEventsForDay(day);
-                        const hourEvents = dayEvents.filter(
-                          (e) => e.startHour <= hour && e.startHour + e.duration > hour
-                        );
                         const startingEvents = dayEvents.filter((e) => Math.floor(e.startHour) === hour);
 
                         return (
                           <div
                             key={`${day.toISOString()}-${hour}`}
                             onDoubleClick={(e) => {
-                              // Calculate half-hour from click position
                               const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
                               const yRatio = (e.clientY - rect.top) / rect.height;
                               const startH = hour + (yRatio >= 0.5 ? 0.5 : 0);
                               openAddEvent({ date: day, startHour: startH });
                             }}
-                            className={`relative border-r border-b border-border/20 h-16 cursor-cell ${
-                              isToday(day) ? "bg-primary/[0.02]" : ""
-                            } hover:bg-primary/[0.03] transition-colors`}
+                            className={`relative border-r border-b h-14 cursor-cell transition-colors ${
+                              isToday(day)
+                                ? isWorkHour ? "bg-primary/[0.03]" : "bg-primary/[0.015]"
+                                : isNightHour ? "bg-slate-50/30" : ""
+                            } ${isWorkHour ? "border-border/20" : "border-border/10"} hover:bg-primary/[0.06]`}
                           >
+                            {/* Half-hour dashed line */}
+                            <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-border/[0.08]" />
                             {startingEvents.map((event) => {
-                              const topOffset = (event.startHour - hour) * 64;
-                              const height = event.duration * 64 - 4;
+                              const topOffset = (event.startHour - hour) * ROW_H;
+                              const height = event.duration * ROW_H - 3;
+                              const isShort = height <= 32;
                               return (
                                 <motion.div
                                   key={event.id}
-                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  initial={{ opacity: 0, scale: 0.96 }}
                                   animate={{ opacity: 1, scale: 1 }}
-                                  whileHover={{ scale: 1.02, zIndex: 20 }}
+                                  whileHover={{ scale: 1.015, zIndex: 20 }}
                                   onClick={() => setSelectedEvent(event)}
-                                  className={`absolute left-0.5 right-0.5 z-10 cursor-pointer overflow-hidden rounded-lg ${event.color} px-2 py-1 text-white shadow-sm transition-shadow hover:shadow-md`}
+                                  className={`absolute left-1 right-1 z-10 cursor-pointer overflow-hidden rounded-lg ${event.color} px-2.5 py-1.5 text-white shadow-sm hover:shadow-lg transition-shadow border border-white/10`}
                                   style={{ top: topOffset, height: Math.max(height, 24) }}
                                 >
-                                  <div className="truncate text-[0.6875rem] flex items-center gap-1" style={{ fontWeight: 600 }}>
+                                  <div className="truncate text-[0.6875rem] flex items-center gap-1.5" style={{ fontWeight: 600 }}>
                                     {event.id.startsWith("ext-") && <Link2 className="h-2.5 w-2.5 shrink-0 opacity-70" />}
+                                    {event.status === "done" && <CircleCheck className="h-3 w-3 shrink-0 opacity-80" />}
                                     <span className="truncate">{event.title}</span>
                                   </div>
-                                  {height > 36 && (
-                                    <div className="flex items-center gap-1 mt-0.5 text-[0.5625rem] text-white/80">
+                                  {!isShort && (
+                                    <div className="flex items-center gap-1.5 mt-0.5 text-[0.5625rem] text-white/75">
                                       <Clock className="h-2.5 w-2.5" />
                                       {Math.floor(event.startHour)}:{(event.startHour % 1) * 60 === 0 ? "00" : "30"}
-                                      {event.hasMeeting && <Video className="h-2.5 w-2.5 ml-1" />}
-                                      {event.aiSuggested && <Sparkles className="h-2.5 w-2.5 ml-1" />}
+                                      –
+                                      {Math.floor(event.startHour + event.duration)}:{((event.startHour + event.duration) % 1) * 60 === 0 ? "00" : "30"}
+                                      {event.hasMeeting && <Video className="h-2.5 w-2.5 ml-0.5" />}
+                                      {event.aiSuggested && <Sparkles className="h-2.5 w-2.5 ml-0.5" />}
+                                    </div>
+                                  )}
+                                  {height > 56 && event.location && (
+                                    <div className="flex items-center gap-1 mt-0.5 text-[0.5625rem] text-white/60">
+                                      <MapPin className="h-2.5 w-2.5" />
+                                      <span className="truncate">{event.location}</span>
+                                    </div>
+                                  )}
+                                  {height > 72 && event.subtasks && event.subtasks.length > 0 && (
+                                    <div className="mt-1 flex items-center gap-1.5 text-[0.5625rem] text-white/60">
+                                      <div className="flex-1 h-1 rounded-full bg-white/20 overflow-hidden">
+                                        <div className="h-full rounded-full bg-white/60" style={{ width: `${(event.subtasks.filter(s => s.done).length / event.subtasks.length) * 100}%` }} />
+                                      </div>
+                                      <span>{event.subtasks.filter(s => s.done).length}/{event.subtasks.length}</span>
                                     </div>
                                   )}
                                 </motion.div>
@@ -1119,12 +1198,48 @@ export function CalendarPage() {
                         );
                       })}
                     </div>
-                  ))}
+                    );
+                  })}
+
+                  {/* Current time indicator line */}
+                  {todayColIdx >= 0 && (
+                    <div
+                      className="absolute left-0 right-0 z-[15] pointer-events-none"
+                      style={{ top: nowHourFrac * ROW_H }}
+                    >
+                      {/* Full-width subtle line */}
+                      <div className="absolute left-0 right-0 h-[1.5px] bg-red-400/30" />
+                      {/* Highlighted line on today's column */}
+                      <div
+                        className="absolute h-[2px] bg-red-500"
+                        style={{
+                          left: `calc((48px + (100% - 48px) / 7 * ${todayColIdx}))`,
+                          width: `calc((100% - 48px) / 7)`,
+                        }}
+                      />
+                      {/* Red dot indicator */}
+                      <div
+                        className="absolute w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shadow-red-300 -translate-y-1/2"
+                        style={{
+                          left: `calc(48px + (100% - 48px) / 7 * ${todayColIdx} - 5px)`,
+                        }}
+                      />
+                      {/* Time label */}
+                      <div
+                        className="absolute -translate-y-1/2 text-[0.5625rem] text-red-500 bg-white/90 px-1 py-0.5 rounded"
+                        style={{ fontWeight: 600, left: 4 }}
+                      >
+                        {format(nowDate, "HH:mm")}
+                      </div>
+                    </div>
+                  )}
+                  </div>
                 </div>
                 </div>{/* min-w-[700px] */}
                 </div>{/* overflow-x-auto */}
               </motion.div>
-            )}
+              );
+            })()}
 
             {/* ═══ LIST VIEW ═══ */}
             {view === "list" && (
@@ -1261,21 +1376,22 @@ export function CalendarPage() {
 
                                 {/* Subtasks */}
                                 {event.subtasks && event.subtasks.length > 0 && (
-                                  <div className="mt-2.5 space-y-1">
+                                  <div className="mt-2.5 space-y-0.5">
                                     {event.subtasks.map((st) => (
-                                      <div
+                                      <button
                                         key={st.id}
-                                        className="flex items-center gap-2 text-[0.75rem]"
+                                        onClick={(e) => { e.stopPropagation(); toggleSubtask(event.id, st.id); }}
+                                        className="flex w-full items-center gap-2 text-[0.75rem] rounded-md px-1.5 py-1 -mx-1.5 transition-colors hover:bg-muted/50 text-left group/st"
                                       >
                                         {st.done ? (
-                                          <CircleCheck className="h-3 w-3 text-emerald-500" />
+                                          <CircleCheck className="h-3 w-3 text-emerald-500 shrink-0" />
                                         ) : (
-                                          <Circle className="h-3 w-3 text-muted-foreground/40" />
+                                          <Circle className="h-3 w-3 text-muted-foreground/40 shrink-0 group-hover/st:text-primary/60 transition-colors" />
                                         )}
                                         <span className={st.done ? "line-through text-muted-foreground" : ""}>
                                           {st.text}
                                         </span>
-                                      </div>
+                                      </button>
                                     ))}
                                   </div>
                                 )}
@@ -1642,14 +1758,18 @@ export function CalendarPage() {
                     <div className="text-[0.8125rem] mb-2" style={{ fontWeight: 600 }}>子任务</div>
                     <div className="space-y-1.5">
                       {selectedEvent.subtasks.map((st) => (
-                        <div key={st.id} className="flex items-center gap-2 text-[0.8125rem]">
+                        <button
+                          key={st.id}
+                          onClick={() => toggleSubtask(selectedEvent.id, st.id)}
+                          className="flex w-full items-center gap-2 text-[0.8125rem] rounded-lg px-2 py-1.5 -mx-2 transition-colors hover:bg-muted/50 text-left group"
+                        >
                           {st.done ? (
-                            <CircleCheck className="h-4 w-4 text-emerald-500" />
+                            <CircleCheck className="h-4 w-4 text-emerald-500 shrink-0" />
                           ) : (
-                            <Circle className="h-4 w-4 text-muted-foreground/40" />
+                            <Circle className="h-4 w-4 text-muted-foreground/40 shrink-0 group-hover:text-primary/60 transition-colors" />
                           )}
                           <span className={st.done ? "line-through text-muted-foreground" : ""}>{st.text}</span>
-                        </div>
+                        </button>
                       ))}
                     </div>
                     <Progress
