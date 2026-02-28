@@ -599,7 +599,13 @@ export function FocusPage() {
 
   const generateMicroTasks = useCallback(() => {
     const templates: Record<string, string[]> = {
-      default: [
+      default: isEn ? [
+        "Spend 2 min clarifying your core goal",
+        "Complete the first small module (10 min sprint)",
+        "Check progress, adjust direction",
+        "Tackle the hardest part",
+        "Wrap up and confirm quality",
+      ] : [
         "花 2 分钟理清思路，写下核心目标",
         "完成第一个小模块（10 分钟冲刺）",
         "检查进度，调整方向",
@@ -709,7 +715,7 @@ export function FocusPage() {
   const simulateDistraction = useCallback(() => {
     setDistractionCount((prev) => prev + 1);
     setShowNudge(true);
-    setNudgeMessage("遇到困难了吗？还是只是需要休息一下？");
+    setNudgeMessage(isEn ? "Having trouble? Or just need a break?" : "遇到困难了吗？还是只是需要休息一下？");
   }, []);
 
   /* ── Computed ── */
@@ -824,7 +830,7 @@ export function FocusPage() {
             <div className="flex flex-col items-center">
               <GrowthTree level={treeLevel} />
               <p className="text-[0.6875rem] text-white/30 mt-2">
-                你的专注之树 · 累计 {sessions.length} 次深度专注
+                {isEn ? `Your focus tree · ${sessions.length} deep focus sessions` : `你的专注之树 · 累计 ${sessions.length} 次深度专注`}
               </p>
             </div>
           </motion.div>
@@ -848,10 +854,10 @@ export function FocusPage() {
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-white/50 hover:text-white/80 hover:bg-white/5 transition-all"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="text-[0.8125rem]">返回</span>
+            <span className="text-[0.8125rem]">{t("focusPage.back")}</span>
           </button>
           <Badge className="bg-white/10 text-white/60 border-0">
-            {focusType === "study" ? "学习模式" : "工作模式"}
+            {focusType === "study" ? t("focusPage.modeStudy") : t("focusPage.modeWork")}
           </Badge>
           <div className="w-20" />
         </div>
@@ -866,7 +872,7 @@ export function FocusPage() {
             {/* Task name */}
             <div>
               <label className="block text-[0.75rem] text-white/50 mb-2" style={{ fontWeight: 600 }}>
-                今天要做什么？
+                {isEn ? "What are you working on today?" : "今天要做什么？"}
               </label>
               <input
                 value={taskName}
@@ -896,7 +902,7 @@ export function FocusPage() {
             {/* Timer mode */}
             <div>
               <label className="block text-[0.75rem] text-white/50 mb-2" style={{ fontWeight: 600 }}>
-                计时模式
+                {isEn ? "Timer Mode" : "计时模式"}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -909,9 +915,9 @@ export function FocusPage() {
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <Timer className="h-4 w-4 text-violet-400" />
-                    <span className="text-[0.8125rem]" style={{ fontWeight: 600 }}>番茄钟</span>
+                    <span className="text-[0.8125rem]" style={{ fontWeight: 600 }}>{t("focus.pomodoro")}</span>
                   </div>
-                  <p className="text-[0.6875rem] text-white/40">倒计时 + 休息循环</p>
+                  <p className="text-[0.6875rem] text-white/40">{isEn ? "Countdown + break cycles" : "倒计时 + 休息循环"}</p>
                 </button>
                 <button
                   onClick={() => setTimerMode("flow")}
@@ -923,9 +929,9 @@ export function FocusPage() {
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <Zap className="h-4 w-4 text-cyan-400" />
-                    <span className="text-[0.8125rem]" style={{ fontWeight: 600 }}>心流模式</span>
+                    <span className="text-[0.8125rem]" style={{ fontWeight: 600 }}>{isEn ? "Flow Mode" : "心流模式"}</span>
                   </div>
-                  <p className="text-[0.6875rem] text-white/40">正向计时，自主节奏</p>
+                  <p className="text-[0.6875rem] text-white/40">{isEn ? "Count up, your own pace" : "正向计时，自主节奏"}</p>
                 </button>
               </div>
             </div>
@@ -934,7 +940,7 @@ export function FocusPage() {
             {timerMode === "pomodoro" && (
               <div>
                 <label className="block text-[0.75rem] text-white/50 mb-2" style={{ fontWeight: 600 }}>
-                  专注时长
+                  {isEn ? "Focus Duration" : "专注时长"}
                 </label>
                 <div className="flex items-center gap-3">
                   <button
@@ -945,7 +951,7 @@ export function FocusPage() {
                   </button>
                   <div className="flex-1 text-center">
                     <div className="text-[2rem]" style={{ fontWeight: 700 }}>{pomodoroMinutes}</div>
-                    <div className="text-[0.6875rem] text-white/30">分钟</div>
+                    <div className="text-[0.6875rem] text-white/30">{t("focusPage.min")}</div>
                   </div>
                   <button
                     onClick={() => setPomodoroMinutes((v) => Math.min(120, v + 5))}
@@ -965,7 +971,7 @@ export function FocusPage() {
                           : "bg-white/5 text-white/30 hover:text-white/50"
                       }`}
                     >
-                      {m}分钟
+                      {m}{t("focusPage.min")}
                     </button>
                   ))}
                 </div>
@@ -975,7 +981,7 @@ export function FocusPage() {
             {/* Theme */}
             <div>
               <label className="block text-[0.75rem] text-white/50 mb-2" style={{ fontWeight: 600 }}>
-                氛围主题
+                {t("focusPage.theme")}
               </label>
               <div className="grid grid-cols-4 gap-2">
                 {(Object.entries(AMBIENT_THEMES) as [AmbientTheme, typeof AMBIENT_THEMES[AmbientTheme]][]).map(([key, val]) => (
@@ -999,7 +1005,7 @@ export function FocusPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-[0.75rem] text-white/50" style={{ fontWeight: 600 }}>
-                  白噪音 & 氛围音
+                  {t("focusPage.ambient")}
                 </label>
                 <button
                   onClick={() => setMasterVolume(!masterVolume)}
@@ -1033,14 +1039,14 @@ export function FocusPage() {
               <label className="block text-[0.75rem] text-white/50 mb-2" style={{ fontWeight: 600 }}>
                 <span className="flex items-center gap-1.5">
                   <Link2 className="h-3 w-3" />
-                  播放视频/音乐（可选）
+                  {isEn ? "Play Video/Music (optional)" : "播放视频/音乐（可选）"}
                 </span>
               </label>
               <div className="relative">
                 <input
                   value={mediaUrl}
                   onChange={(e) => setMediaUrl(e.target.value)}
-                  placeholder="粘贴 YouTube / Spotify / Apple Music 或其他媒体链接..."
+                  placeholder={isEn ? "Paste YouTube / Spotify / Apple Music or other media link..." : "粘贴 YouTube / Spotify / Apple Music 或其他媒体链接..."}
                   className="w-full rounded-xl border border-white/10 bg-white/5 pl-4 pr-10 py-3 text-[0.875rem] text-white placeholder:text-white/20 outline-none focus:border-white/20 backdrop-blur-sm transition-colors"
                 />
                 {mediaUrl && (
@@ -1058,15 +1064,15 @@ export function FocusPage() {
                   {(() => {
                     const mt = detectMediaType(mediaUrl);
                     const info: Record<string, { icon: typeof Youtube; label: string; color: string }> = {
-                      youtube: { icon: Youtube, label: "YouTube 视频", color: "text-red-400" },
-                      spotify: { icon: Music2, label: "Spotify 音乐", color: "text-green-400" },
+                      youtube: { icon: Youtube, label: isEn ? "YouTube Video" : "YouTube 视频", color: "text-red-400" },
+                      spotify: { icon: Music2, label: isEn ? "Spotify Music" : "Spotify 音乐", color: "text-green-400" },
                       "apple-music": { icon: Music, label: "Apple Music", color: "text-pink-400" },
-                      video: { icon: Tv, label: "视频链接", color: "text-blue-400" },
-                      audio: { icon: Headphones, label: "音频链接", color: "text-cyan-400" },
-                      unknown: { icon: Globe, label: "外部链接", color: "text-white/40" },
+                      video: { icon: Tv, label: isEn ? "Video Link" : "视频链接", color: "text-blue-400" },
+                      audio: { icon: Headphones, label: isEn ? "Audio Link" : "音频链接", color: "text-cyan-400" },
+                      unknown: { icon: Globe, label: isEn ? "External Link" : "外部链接", color: "text-white/40" },
                     };
                     const item = mt && info[mt];
-                    if (!item) return <span className="text-[0.6875rem] text-red-400/60">无法识别的链接格式</span>;
+                    if (!item) return <span className="text-[0.6875rem] text-red-400/60">{isEn ? "Unrecognized link format" : "无法识别的链接格式"}</span>;
                     const Icon = item.icon;
                     return (
                       <div className="flex items-center gap-1.5">
@@ -1101,7 +1107,7 @@ export function FocusPage() {
                 style={{ fontWeight: 700 }}
               >
                 <Play className="h-5 w-5 mr-2" />
-                开始专注
+                {t("focusPage.start")}
               </Button>
             </motion.div>
           </motion.div>
@@ -1170,7 +1176,7 @@ export function FocusPage() {
           <div className="flex flex-col items-center justify-center gap-3 py-4">
             <div className="flex items-center gap-2 mb-2">
               <Headphones className="h-5 w-5 text-white/40" />
-              <span className="text-[0.8125rem] text-white/50">音频播放中</span>
+              <span className="text-[0.8125rem] text-white/50">{isEn ? "Audio playing" : "音频播放中"}</span>
             </div>
             <audio src={mediaUrl} controls autoPlay className="w-full max-w-sm" />
           </div>
@@ -1195,19 +1201,19 @@ export function FocusPage() {
             className="rounded-lg px-3 py-1.5 text-white/40 hover:text-white/70 hover:bg-white/5 text-[0.75rem] transition-all"
             style={{ fontWeight: 500 }}
           >
-            结束专注
+            {t("focusPage.finish")}
           </button>
 
           {/* Center: Timer + controls */}
           <div className="flex items-center gap-3">
             {!isBreak && (
               <Badge className="bg-white/8 text-white/50 border-0 text-[0.625rem]">
-                {timerMode === "pomodoro" ? "番茄钟" : "心流"}
+                {timerMode === "pomodoro" ? t("focus.pomodoro") : (isEn ? "Flow" : "心流")}
               </Badge>
             )}
             {isBreak && (
               <Badge className="bg-emerald-500/15 text-emerald-300 border-0 text-[0.625rem]">
-                <Coffee className="h-2.5 w-2.5 mr-1" /> 休息中
+                <Coffee className="h-2.5 w-2.5 mr-1" /> {t("focusPage.breakTitle")}
               </Badge>
             )}
 
@@ -1243,7 +1249,7 @@ export function FocusPage() {
               <button
                 onClick={startBreak}
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/5 text-white/30 hover:text-white/60 transition-colors"
-                title="跳过至休息"
+                title={isEn ? "Skip to break" : "跳过至休息"}
               >
                 <SkipForward className="h-3 w-3" />
               </button>
@@ -1252,7 +1258,7 @@ export function FocusPage() {
               <button
                 onClick={finishSession}
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/5 text-white/30 hover:text-white/60 transition-colors"
-                title="结束"
+                title={t("focusPage.finish")}
               >
                 <Check className="h-3 w-3" />
               </button>
@@ -1262,7 +1268,7 @@ export function FocusPage() {
           <div className="flex items-center gap-1.5">
             {/* Task name */}
             <span className="text-[0.6875rem] text-white/30 hidden sm:inline mr-2 max-w-32 truncate">
-              {isBreak ? "休息中" : taskName}
+              {isBreak ? t("focusPage.breakTitle") : taskName}
             </span>
             <button onClick={toggleFullscreen} className="rounded-lg p-1.5 text-white/30 hover:text-white/60 transition-colors">
               {isFullscreen ? <Shrink className="h-3.5 w-3.5" /> : <Expand className="h-3.5 w-3.5" />}
@@ -1299,7 +1305,7 @@ export function FocusPage() {
             <div className="hidden sm:flex w-72 shrink-0 flex-col border-r border-white/5 bg-black/20 backdrop-blur-sm">
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
                 <span className="text-[0.75rem] text-white/50" style={{ fontWeight: 600 }}>
-                  微型冲刺任务
+                  {t("focusPage.microTasks")}
                 </span>
                 <Badge className="bg-white/8 text-white/40 border-0 text-[0.5625rem]">
                   {microTasks.filter((t) => t.done).length}/{microTasks.length}
@@ -1367,14 +1373,14 @@ export function FocusPage() {
                           <button
                             onClick={() => startEditTask(task.id, task.text)}
                             className="rounded p-0.5 text-white/20 hover:text-white/50 transition-colors"
-                            title="编辑"
+                            title={t("common.edit")}
                           >
                             <Pencil className="h-2.5 w-2.5" />
                           </button>
                           <button
                             onClick={() => deleteMicroTask(task.id)}
                             className="rounded p-0.5 text-white/20 hover:text-red-400/70 transition-colors"
-                            title="删除"
+                            title={t("common.delete")}
                           >
                             <Trash2 className="h-2.5 w-2.5" />
                           </button>
@@ -1392,7 +1398,7 @@ export function FocusPage() {
                     value={newMicroTask}
                     onChange={(e) => setNewMicroTask(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addMicroTask()}
-                    placeholder="添加微任务..."
+                    placeholder={isEn ? "Add micro task..." : "添加微任务..."}
                     className="flex-1 bg-transparent text-[0.75rem] text-white/60 placeholder:text-white/20 outline-none"
                   />
                   <button
@@ -1423,7 +1429,7 @@ export function FocusPage() {
               <div className="text-center">
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4">
                   <p className="text-[0.875rem] text-white/30" style={{ fontWeight: 500 }}>
-                    {isBreak ? "休息一下，充充电" : taskName}
+                    {isBreak ? t("focusPage.breakHint") : taskName}
                   </p>
                 </motion.div>
                 <motion.div
@@ -1458,7 +1464,7 @@ export function FocusPage() {
                 {!isBreak && microTasks.length > 0 && (
                   <div className="mt-8 max-w-xs mx-auto">
                     <div className="flex items-center justify-between text-[0.625rem] text-white/30 mb-1.5">
-                      <span>任务进度</span>
+                      <span>{isEn ? "Task Progress" : "任务进度"}</span>
                       <span>{microTasks.filter((t) => t.done).length}/{microTasks.length}</span>
                     </div>
                     <div className="h-1 rounded-full bg-white/5 overflow-hidden">
@@ -1479,10 +1485,10 @@ export function FocusPage() {
                   <Sparkles className="h-3 w-3 text-violet-400" />
                 </div>
                 <span className="text-[0.75rem] text-white/60" style={{ fontWeight: 600 }}>
-                  AI 助手
+                  {isEn ? "AI Assistant" : "AI 助手"}
                 </span>
                 <Badge className="ml-auto bg-white/8 text-white/30 border-0 text-[0.5rem]">
-                  专注模式
+                  {isEn ? "Focus Mode" : "专注模式"}
                 </Badge>
               </div>
 
@@ -1491,17 +1497,22 @@ export function FocusPage() {
                 <button
                   onClick={() => {
                     if (unblockMessages.length === 0) {
-                      setUnblockMessages([{ id: uid(), role: "ai", content: "我在这里陪你。遇到卡壳可以随时告诉我，我会帮你理清思路，一步步突破障碍。" }]);
+                      setUnblockMessages([{ id: uid(), role: "ai", content: isEn ? "I'm here with you. If you get stuck, just tell me and I'll help you think through it step by step." : "我在这里陪你。遇到卡壳可以随时告诉我，我会帮你理清思路，一步步突破障碍。" }]);
                     }
                   }}
                   className="flex-1 flex items-center gap-1.5 rounded-lg bg-white/5 px-2.5 py-1.5 text-[0.625rem] text-white/40 hover:text-white/60 hover:bg-white/8 transition-colors"
                 >
                   <Lightbulb className="h-3 w-3 text-amber-400/60" />
-                  <span>拉我一把</span>
+                  <span>{isEn ? "Help me" : "拉我一把"}</span>
                 </button>
                 <button
                   onClick={() => {
-                    const tips = [
+                    const tips = isEn ? [
+                      "Try breaking the current task into smaller steps. Start with the easiest part.",
+                      "Take 3 deep breaths, close your eyes for 10 seconds, then start fresh.",
+                      "Think from a different angle: how would you explain this to someone else?",
+                      "Write down what you already know — what you don't know will naturally emerge.",
+                    ] : [
                       "试试把当前任务拆成更小的步骤，先完成最简单的部分。",
                       "深呼吸 3 次，闭眼 10 秒，然后重新出发。",
                       "换个角度思考：如果你要教别人做这件事，你会怎么解释？",
@@ -1513,7 +1524,7 @@ export function FocusPage() {
                   className="flex-1 flex items-center gap-1.5 rounded-lg bg-white/5 px-2.5 py-1.5 text-[0.625rem] text-white/40 hover:text-white/60 hover:bg-white/8 transition-colors"
                 >
                   <Zap className="h-3 w-3 text-cyan-400/60" />
-                  <span>灵感启发</span>
+                  <span>{isEn ? "Inspire me" : "灵感启发"}</span>
                 </button>
               </div>
 
@@ -1525,7 +1536,7 @@ export function FocusPage() {
                       <Lightbulb className="h-5 w-5 text-white/15" />
                     </div>
                     <p className="text-[0.6875rem] text-white/25 leading-relaxed max-w-[200px]">
-                      遇到难题了？点击上方按钮或直接输入问题，我会帮你突破瓶颈
+                      {isEn ? "Stuck on something? Click a button above or type your question — I'll help you break through." : "遇到难题了？点击上方按钮或直接输入问题，我会帮你突破瓶颈"}
                     </p>
                   </div>
                 )}
@@ -1555,7 +1566,7 @@ export function FocusPage() {
                     value={unblockInput}
                     onChange={(e) => setUnblockInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && sendUnblockMessage()}
-                    placeholder="描述你遇到的问题..."
+                    placeholder={isEn ? "Describe what you're stuck on..." : "描述你遇到的问题..."}
                     className="flex-1 bg-transparent text-[0.75rem] text-white/70 placeholder:text-white/20 outline-none"
                   />
                   <button
@@ -1579,7 +1590,7 @@ export function FocusPage() {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
                   className="w-64 max-h-56 overflow-y-auto rounded-2xl border border-white/8 bg-black/50 backdrop-blur-xl p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[0.6875rem] text-white/50" style={{ fontWeight: 600 }}>任务</span>
+                    <span className="text-[0.6875rem] text-white/50" style={{ fontWeight: 600 }}>{t("focusPage.microTasks")}</span>
                     <button onClick={() => setShowMicroTasks(false)} className="text-white/20 hover:text-white/40">
                       <X className="h-3 w-3" />
                     </button>
@@ -1603,7 +1614,7 @@ export function FocusPage() {
                   <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-white/5">
                     <input value={newMicroTask} onChange={(e) => setNewMicroTask(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && addMicroTask()}
-                      placeholder="添加..." className="flex-1 bg-transparent text-[0.625rem] text-white/60 placeholder:text-white/20 outline-none" />
+                      placeholder={isEn ? "Add..." : "添加..."} className="flex-1 bg-transparent text-[0.625rem] text-white/60 placeholder:text-white/20 outline-none" />
                     <button onClick={addMicroTask} className="text-white/20 hover:text-white/50"><Plus className="h-3 w-3" /></button>
                   </div>
                 </motion.div>
@@ -1621,7 +1632,7 @@ export function FocusPage() {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
                   className="w-64 max-h-56 flex flex-col rounded-2xl border border-white/8 bg-black/50 backdrop-blur-xl overflow-hidden">
                   <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
-                    <div className="flex items-center gap-1"><Lightbulb className="h-3 w-3 text-amber-400" /><span className="text-[0.625rem] text-white/60" style={{ fontWeight: 600 }}>AI 助手</span></div>
+                    <div className="flex items-center gap-1"><Lightbulb className="h-3 w-3 text-amber-400" /><span className="text-[0.625rem] text-white/60" style={{ fontWeight: 600 }}>{isEn ? "AI Assistant" : "AI 助手"}</span></div>
                     <button onClick={() => setShowUnblock(false)} className="text-white/20 hover:text-white/40"><X className="h-3 w-3" /></button>
                   </div>
                   <div className="flex-1 overflow-y-auto p-2 space-y-1.5 min-h-[80px]">
@@ -1636,7 +1647,7 @@ export function FocusPage() {
                   <div className="flex items-center gap-1.5 px-2.5 py-2 border-t border-white/5">
                     <input value={unblockInput} onChange={(e) => setUnblockInput(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && sendUnblockMessage()}
-                      placeholder="问题..." className="flex-1 bg-transparent text-[0.625rem] text-white/70 placeholder:text-white/20 outline-none" />
+                      placeholder={isEn ? "Question..." : "问题..."} className="flex-1 bg-transparent text-[0.625rem] text-white/70 placeholder:text-white/20 outline-none" />
                     <button onClick={sendUnblockMessage} disabled={!unblockInput.trim()} className="text-white/30 hover:text-white/60 disabled:opacity-30"><Send className="h-3 w-3" /></button>
                   </div>
                 </motion.div>
@@ -1669,11 +1680,11 @@ export function FocusPage() {
                   <div className="flex gap-2">
                     <Button onClick={() => setShowNudge(false)} variant="outline"
                       className="flex-1 rounded-xl border-white/10 text-white/60 hover:bg-white/5 bg-transparent text-[0.8125rem]">
-                      继续专注
+                      {isEn ? "Keep focusing" : "继续专注"}
                     </Button>
                     <Button onClick={() => { setShowNudge(false); startBreak(); }}
                       className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[0.8125rem]">
-                      <Coffee className="h-3.5 w-3.5 mr-1" /> 休息一会
+                      <Coffee className="h-3.5 w-3.5 mr-1" /> {isEn ? "Take a break" : "休息一会"}
                     </Button>
                   </div>
                 </div>
@@ -1696,10 +1707,10 @@ export function FocusPage() {
                       <CalendarClock className="h-5 w-5 text-amber-400" />
                     </div>
                     <div>
-                      <div className="text-[0.6875rem] text-amber-400/60 mb-0.5" style={{ fontWeight: 600 }}>日程提醒</div>
+                      <div className="text-[0.6875rem] text-amber-400/60 mb-0.5" style={{ fontWeight: 600 }}>{isEn ? "Schedule Reminder" : "日程提醒"}</div>
                       <h3 className="text-[1rem] text-white/90" style={{ fontWeight: 600 }}>{reminderEvent.title}</h3>
                       <p className="text-[0.75rem] text-white/40 mt-0.5">
-                        {reminderEvent.startTime.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })} 开始 · 还有约 {Math.max(1, Math.ceil((reminderEvent.startTime.getTime() - Date.now()) / 60000))} 分钟
+                        {reminderEvent.startTime.toLocaleTimeString(isEn ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" })} {isEn ? `starts · about ${Math.max(1, Math.ceil((reminderEvent.startTime.getTime() - Date.now()) / 60000))} min left` : `开始 · 还有约 ${Math.max(1, Math.ceil((reminderEvent.startTime.getTime() - Date.now()) / 60000))} 分钟`}
                       </p>
                     </div>
                   </div>
@@ -1713,7 +1724,7 @@ export function FocusPage() {
                       variant="outline"
                       className="flex-1 rounded-xl border-white/10 text-white/60 hover:bg-white/5 bg-transparent text-[0.8125rem]"
                     >
-                      稍后提醒
+                      {isEn ? "Remind later" : "稍后提醒"}
                     </Button>
                     <Button
                       onClick={() => {
@@ -1723,7 +1734,7 @@ export function FocusPage() {
                       }}
                       className="flex-1 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-[0.8125rem]"
                     >
-                      <Bell className="h-3.5 w-3.5 mr-1" /> 结束专注去处理
+                      <Bell className="h-3.5 w-3.5 mr-1" /> {isEn ? "End focus & handle it" : "结束专注去处理"}
                     </Button>
                   </div>
                 </div>
@@ -1742,12 +1753,12 @@ export function FocusPage() {
     const lastSession = sessions[0];
     const grade =
       timeElapsed >= 45 * 60
-        ? { label: "S", color: "from-amber-400 to-yellow-500", text: "完美专注" }
+        ? { label: "S", color: "from-amber-400 to-yellow-500", text: isEn ? "Perfect Focus" : "完美专注" }
         : timeElapsed >= 25 * 60
-        ? { label: "A", color: "from-violet-400 to-purple-500", text: "高效专注" }
+        ? { label: "A", color: "from-violet-400 to-purple-500", text: isEn ? "High Efficiency" : "高效专注" }
         : timeElapsed >= 15 * 60
-        ? { label: "B", color: "from-blue-400 to-cyan-500", text: "良好专注" }
-        : { label: "C", color: "from-gray-400 to-gray-500", text: "短暂专注" };
+        ? { label: "B", color: "from-blue-400 to-cyan-500", text: isEn ? "Good Focus" : "良好专注" }
+        : { label: "C", color: "from-gray-400 to-gray-500", text: isEn ? "Brief Focus" : "短暂专注" };
 
     return (
       <div className="fixed inset-0 z-0 flex flex-col bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white overflow-y-auto">
@@ -1772,7 +1783,7 @@ export function FocusPage() {
               </motion.div>
               <h2 className="text-[1.5rem] mb-1" style={{ fontWeight: 700 }}>{grade.text}</h2>
               <p className="text-[0.8125rem] text-white/40">
-                {new Date().toLocaleDateString("zh-CN", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                {new Date().toLocaleDateString(isEn ? "en-US" : "zh-CN", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}
               </p>
             </div>
 
@@ -1788,7 +1799,7 @@ export function FocusPage() {
                   {taskName}
                 </div>
                 <Badge className="bg-white/8 text-white/50 border-0 text-[0.625rem]">
-                  {focusType === "study" ? "学习" : "工作"}
+                  {focusType === "study" ? (isEn ? "Study" : "学习") : (isEn ? "Work" : "工作")}
                 </Badge>
               </div>
 
@@ -1797,19 +1808,19 @@ export function FocusPage() {
                   <div className="text-[1.5rem]" style={{ fontWeight: 700 }}>
                     {formatDuration(timeElapsed)}
                   </div>
-                  <div className="text-[0.625rem] text-white/30">深度专注</div>
+                  <div className="text-[0.625rem] text-white/30">{isEn ? "Deep Focus" : "深度专注"}</div>
                 </div>
                 <div className="p-4 text-center">
                   <div className="text-[1.5rem]" style={{ fontWeight: 700 }}>
                     {microTasks.filter((t) => t.done).length}/{microTasks.length}
                   </div>
-                  <div className="text-[0.625rem] text-white/30">完成任务</div>
+                  <div className="text-[0.625rem] text-white/30">{isEn ? "Tasks Done" : "完成任务"}</div>
                 </div>
                 <div className="p-4 text-center">
                   <div className="text-[1.5rem]" style={{ fontWeight: 700 }}>
                     {distractionCount}
                   </div>
-                  <div className="text-[0.625rem] text-white/30">抵御走神</div>
+                  <div className="text-[0.625rem] text-white/30">{isEn ? "Distractions Resisted" : "抵御走神"}</div>
                 </div>
               </div>
             </motion.div>
@@ -1827,7 +1838,7 @@ export function FocusPage() {
                 </div>
                 <div>
                   <div className="text-[0.6875rem] text-violet-300/60 mb-1" style={{ fontWeight: 600 }}>
-                    AI 评语
+                    {isEn ? "AI Review" : "AI 评语"}
                   </div>
                   <p className="text-[0.8125rem] text-white/70 leading-relaxed">
                     {reviewEncouragement}
@@ -1844,7 +1855,7 @@ export function FocusPage() {
               className="text-center mb-6"
             >
               <p className="text-[0.75rem] text-white/40 mb-2" style={{ fontWeight: 500 }}>
-                你对这次专注的感受
+                {isEn ? "How did this session feel?" : "你对这次专注的感受"}
               </p>
               <div className="flex items-center justify-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -1887,7 +1898,7 @@ export function FocusPage() {
                   transition={{ delay: 1.2 }}
                   className="text-[0.6875rem] text-emerald-400/50 mt-2"
                 >
-                  你的专注之树长大了一点！
+                  {isEn ? "Your focus tree grew a little!" : "你的专注之树长大了一点！"}
                 </motion.p>
               )}
             </motion.div>
@@ -1909,7 +1920,7 @@ export function FocusPage() {
                 className="w-full h-12 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-[0.9375rem]"
                 style={{ fontWeight: 600 }}
               >
-                <RotateCcw className="h-4 w-4 mr-2" /> 再来一次
+                <RotateCcw className="h-4 w-4 mr-2" /> {isEn ? "One more time" : "再来一次"}
               </Button>
               <Button
                 onClick={() => navigate("/dashboard")}
@@ -1917,7 +1928,7 @@ export function FocusPage() {
                 className="w-full h-12 rounded-2xl border-white/10 text-white/60 hover:bg-white/5 bg-transparent text-[0.9375rem]"
                 style={{ fontWeight: 500 }}
               >
-                返回工作台
+                {t("focusPage.backToWorkspace")}
               </Button>
             </motion.div>
           </motion.div>
