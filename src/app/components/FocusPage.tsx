@@ -366,6 +366,39 @@ function BreathingOrb({ theme }: { theme: AmbientTheme }) {
    ═══════════════════════════════════════════ */
 export function FocusPage() {
   const navigate = useNavigate();
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en-US";
+
+  // Build translated configs inside component
+  const ambientThemeLabels: Record<AmbientTheme, string> = {
+    dark: t("focusPage.themeDeepBlack"),
+    forest: t("focusPage.themeEyeCare"),
+    ocean: t("focusPage.themeDeepSea"),
+    night: t("focusPage.themeStarry"),
+  };
+
+  const soundNames: Record<string, string> = {
+    rain: t("focusPage.rain"), wind: t("focusPage.wind"), wave: t("focusPage.wave"),
+    fire: t("focusPage.fire"), forest: t("focusPage.forest"), lofi: "Lofi",
+    binaural: t("focusPage.binaural"), mountain: t("focusPage.mountain"),
+  };
+
+  const treeStageLabels = [
+    t("tree.seed"), t("tree.sprout"), t("tree.seedling"), t("tree.sapling"),
+    t("tree.young"), t("tree.small"), t("tree.big"), t("tree.bloom"),
+    t("tree.lush"), t("tree.fruit"), t("tree.harvest"),
+  ];
+
+  const taskTemplatesLocal: Record<FocusType, string[]> = {
+    study: Array.from({ length: 7 }, (_, i) => t(`focusPage.study.${i}`)),
+    work: Array.from({ length: 7 }, (_, i) => t(`focusPage.work.${i}`)),
+  };
+
+  const upcomingEventsLocal: ScheduleEvent[] = [
+    { id: "evt1", title: t("focusPage.mock.meeting"), startTime: new Date(Date.now() + 15 * 60 * 1000), type: "meeting" },
+    { id: "evt2", title: t("focusPage.mock.report"), startTime: new Date(Date.now() + 45 * 60 * 1000), type: "task" },
+    { id: "evt3", title: t("focusPage.mock.teaTime"), startTime: new Date(Date.now() + 90 * 60 * 1000), type: "reminder" },
+  ];
 
   /* ── Core state ── */
   const [phase, setPhase] = useState<FocusPhase>("select");
@@ -410,7 +443,7 @@ export function FocusPage() {
   const [editingTaskText, setEditingTaskText] = useState("");
 
   /* ── Schedule reminders ── */
-  const [upcomingEvents] = useState<ScheduleEvent[]>(getMockUpcomingEvents);
+  const [upcomingEvents] = useState<ScheduleEvent[]>(upcomingEventsLocal);
   const [showScheduleReminder, setShowScheduleReminder] = useState(false);
   const [reminderEvent, setReminderEvent] = useState<ScheduleEvent | null>(null);
   const [dismissedReminders, setDismissedReminders] = useState<Set<string>>(new Set());
@@ -491,7 +524,7 @@ export function FocusPage() {
         // After 45+ minutes of "flow", suggest a break
         if (timeElapsed > 45 * 60) {
           setShowNudge(true);
-          setNudgeMessage(`你已经高度专注了 ${Math.floor(timeElapsed / 60)} 分钟，要不要站起来喝杯水？`);
+          setNudgeMessage(isEn ? `You've been focused for ${Math.floor(timeElapsed / 60)} minutes. Take a break and drink some water?` : `你已经高度专注了 ${Math.floor(timeElapsed / 60)} 分钟，要不要站起来喝杯水？`);
         }
       }, 120000); // 2min idle
     };
@@ -710,13 +743,13 @@ export function FocusPage() {
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-white/50 hover:text-white/80 hover:bg-white/5 transition-all"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="text-[0.8125rem]">返回工作台</span>
+            <span className="text-[0.8125rem]">{t("tc.back")}</span>
           </button>
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
               <Target className="h-3.5 w-3.5 text-white" />
             </div>
-            <span className="text-[0.9375rem]" style={{ fontWeight: 700 }}>专注空间</span>
+            <span className="text-[0.9375rem]" style={{ fontWeight: 700 }}>{t("focus.title")}</span>
           </div>
           <div className="w-24" />
         </div>
@@ -740,10 +773,10 @@ export function FocusPage() {
             </motion.div>
 
             <h1 className="text-[1.75rem] sm:text-[2.25rem] mb-3" style={{ fontWeight: 800 }}>
-              准备好了吗？
+              {isEn ? "Ready to focus?" : "准备好了吗？"}
             </h1>
             <p className="text-[0.9375rem] text-white/50 mb-10 leading-relaxed">
-              选择你的专注模式，进入沉浸式深度工作状态
+              {isEn ? "Choose your focus mode and enter immersive deep work" : "选择你的专注模式，进入沉浸式深度工作状态"}
             </p>
 
             {/* Mode cards */}
@@ -760,9 +793,9 @@ export function FocusPage() {
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/15">
                   <BookOpen className="h-6 w-6 text-blue-400" />
                 </div>
-                <h3 className="text-[1.125rem] mb-1" style={{ fontWeight: 700 }}>专注学习</h3>
+                <h3 className="text-[1.125rem] mb-1" style={{ fontWeight: 700 }}>{t("focusPage.modeStudy")}</h3>
                 <p className="text-[0.8125rem] text-white/40 leading-relaxed">
-                  阅读、笔记、论文、备考、网课...
+                  {isEn ? "Reading, notes, papers, exams, courses..." : "阅读、笔记、论文、备考、网课..."}
                 </p>
                 <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-hover:text-blue-400/60 transition-colors" />
               </motion.button>
@@ -779,9 +812,9 @@ export function FocusPage() {
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/15">
                   <Briefcase className="h-6 w-6 text-amber-400" />
                 </div>
-                <h3 className="text-[1.125rem] mb-1" style={{ fontWeight: 700 }}>专注工作</h3>
+                <h3 className="text-[1.125rem] mb-1" style={{ fontWeight: 700 }}>{t("focusPage.modeWork")}</h3>
                 <p className="text-[0.8125rem] text-white/40 leading-relaxed">
-                  编码、设计、文档、会议准备...
+                  {isEn ? "Coding, design, docs, meetings..." : "编码、设计、文档、会议准备..."}
                 </p>
                 <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/20 group-hover:text-amber-400/60 transition-colors" />
               </motion.button>
@@ -838,7 +871,7 @@ export function FocusPage() {
               <input
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
-                placeholder={TASK_TEMPLATES[focusType][Math.floor(Math.random() * TASK_TEMPLATES[focusType].length)]}
+                placeholder={taskTemplatesLocal[focusType][Math.floor(Math.random() * taskTemplatesLocal[focusType].length)]}
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[1rem] text-white placeholder:text-white/20 outline-none focus:border-white/20 backdrop-blur-sm transition-colors"
                 style={{ fontWeight: 500 }}
                 autoFocus
@@ -848,13 +881,13 @@ export function FocusPage() {
               />
               {/* Quick select */}
               <div className="flex flex-wrap gap-1.5 mt-2.5">
-                {TASK_TEMPLATES[focusType].slice(0, 4).map((t) => (
+                {taskTemplatesLocal[focusType].slice(0, 4).map((tpl) => (
                   <button
-                    key={t}
-                    onClick={() => setTaskName(t)}
+                    key={tpl}
+                    onClick={() => setTaskName(tpl)}
                     className="rounded-lg bg-white/5 px-2.5 py-1 text-[0.6875rem] text-white/40 hover:text-white/60 hover:bg-white/10 transition-colors"
                   >
-                    {t}
+                    {tpl}
                   </button>
                 ))}
               </div>
@@ -956,7 +989,7 @@ export function FocusPage() {
                     }`}
                   >
                     <div className={`mx-auto mb-1.5 h-6 w-6 rounded-full bg-gradient-to-br ${val.bg}`} />
-                    <span className="text-[0.625rem] text-white/50">{val.label}</span>
+                    <span className="text-[0.625rem] text-white/50">{ambientThemeLabels[key]}</span>
                   </button>
                 ))}
               </div>
@@ -988,7 +1021,7 @@ export function FocusPage() {
                   >
                     <s.icon className={`mx-auto h-4 w-4 mb-1 ${s.active ? s.color : "text-white/30"}`} />
                     <span className={`text-[0.625rem] ${s.active ? "text-white/70" : "text-white/30"}`}>
-                      {s.name}
+                      {soundNames[s.id] || s.name}
                     </span>
                   </button>
                 ))}
