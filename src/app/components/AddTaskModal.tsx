@@ -20,6 +20,7 @@ import {
   ArrowRight,
   CircleAlert,
 } from "lucide-react";
+import { useLanguage } from "./LanguageContext";
 
 /* ═══════════════ Types ═══════════════ */
 export interface NewTaskData {
@@ -39,32 +40,32 @@ interface AddTaskModalProps {
 }
 
 /* ═══════════════ Config ═══════════════ */
-const priorities: { key: "high" | "medium" | "low"; label: string; desc: string; color: string; dot: string }[] = [
-  { key: "high", label: "紧急", desc: "立即处理", color: "border-red-300 bg-red-50 text-red-700", dot: "bg-red-500" },
-  { key: "medium", label: "一般", desc: "近期完成", color: "border-amber-300 bg-amber-50 text-amber-700", dot: "bg-amber-500" },
-  { key: "low", label: "不急", desc: "有空再做", color: "border-emerald-300 bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
+const priorityTplKeys = [
+  { key: "high" as const, labelKey: "addTask.priority.high", descKey: "addTask.priority.high.desc", color: "border-red-300 bg-red-50 text-red-700", dot: "bg-red-500" },
+  { key: "medium" as const, labelKey: "addTask.priority.medium", descKey: "addTask.priority.medium.desc", color: "border-amber-300 bg-amber-50 text-amber-700", dot: "bg-amber-500" },
+  { key: "low" as const, labelKey: "addTask.priority.low", descKey: "addTask.priority.low.desc", color: "border-emerald-300 bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" },
 ];
 
-const categories = [
-  { key: "工作", emoji: "💼" },
-  { key: "会议", emoji: "📅" },
-  { key: "学习", emoji: "📚" },
-  { key: "健康", emoji: "🏃" },
-  { key: "生活", emoji: "🏠" },
-  { key: "财务", emoji: "💰" },
-  { key: "社交", emoji: "👥" },
-  { key: "其他", emoji: "📌" },
+const categoryKeys = [
+  { key: "addTask.cat.work", emoji: "💼" },
+  { key: "addTask.cat.meeting", emoji: "📅" },
+  { key: "addTask.cat.learning", emoji: "📚" },
+  { key: "addTask.cat.health", emoji: "🏃" },
+  { key: "addTask.cat.life", emoji: "🏠" },
+  { key: "addTask.cat.finance", emoji: "💰" },
+  { key: "addTask.cat.social", emoji: "👥" },
+  { key: "addTask.cat.other", emoji: "📌" },
 ];
 
-const colorTags = [
-  { key: "bg-purple-500", label: "紫色", ring: "ring-purple-300" },
-  { key: "bg-blue-500", label: "蓝色", ring: "ring-blue-300" },
-  { key: "bg-cyan-500", label: "青色", ring: "ring-cyan-300" },
-  { key: "bg-emerald-500", label: "绿色", ring: "ring-emerald-300" },
-  { key: "bg-amber-500", label: "琥珀", ring: "ring-amber-300" },
-  { key: "bg-rose-500", label: "玫红", ring: "ring-rose-300" },
-  { key: "bg-orange-500", label: "橙色", ring: "ring-orange-300" },
-  { key: "bg-pink-500", label: "粉色", ring: "ring-pink-300" },
+const colorTagKeys = [
+  { key: "bg-purple-500", labelKey: "addTask.color.purple", ring: "ring-purple-300" },
+  { key: "bg-blue-500", labelKey: "addTask.color.blue", ring: "ring-blue-300" },
+  { key: "bg-cyan-500", labelKey: "addTask.color.cyan", ring: "ring-cyan-300" },
+  { key: "bg-emerald-500", labelKey: "addTask.color.green", ring: "ring-emerald-300" },
+  { key: "bg-amber-500", labelKey: "addTask.color.amber", ring: "ring-amber-300" },
+  { key: "bg-rose-500", labelKey: "addTask.color.rose", ring: "ring-rose-300" },
+  { key: "bg-orange-500", labelKey: "addTask.color.orange", ring: "ring-orange-300" },
+  { key: "bg-pink-500", labelKey: "addTask.color.pink", ring: "ring-pink-300" },
 ];
 
 /* ═══════════════ AI Simulation ═══════════════ */
@@ -173,9 +174,14 @@ function simulateAIAnalysis(text: string): Promise<{ priority: "high" | "medium"
 
 /* ═══════════════ Component ═══════════════ */
 export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddTaskModalProps) {
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en-US";
+  const priorities = priorityTplKeys.map((p) => ({ ...p, label: t(p.labelKey), desc: t(p.descKey) }));
+  const categories = categoryKeys.map((c) => ({ key: t(c.key), emoji: c.emoji }));
+  const colorTags = colorTagKeys.map((c) => ({ ...c, label: t(c.labelKey) }));
   const [text, setText] = useState(initialText);
   const [priority, setPriority] = useState<"high" | "medium" | "low">("medium");
-  const [category, setCategory] = useState("其他");
+  const [category, setCategory] = useState(t("addTask.cat.other"));
   const [color, setColor] = useState("bg-purple-500");
   const [dueDate, setDueDate] = useState("");
   const [dueTime, setDueTime] = useState("");
@@ -198,14 +204,14 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
     if (open) {
       setText(initialText);
       setPriority("medium");
-      setCategory("其他");
+      setCategory(t("addTask.cat.other"));
       setColor("bg-purple-500");
       setDueDate("");
       setDueTime("");
       setAiReasoning("");
       setAiApplied(false);
     }
-  }, [open, initialText]);
+  }, [open, initialText, t]);
 
   // Persist AI toggle
   useEffect(() => {
@@ -268,7 +274,7 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed inset-x-3 top-[8%] z-50 mx-auto max-w-lg rounded-2xl bg-white shadow-2xl sm:inset-x-auto sm:w-full max-h-[84vh] flex flex-col overflow-hidden"
+            className="fixed inset-x-3 top-[8%] z-50 mx-auto max-w-lg rounded-2xl bg-card shadow-2xl sm:inset-x-auto sm:w-full max-h-[84vh] flex flex-col overflow-hidden"
           >
             {/* ── Header ── */}
             <div className="shrink-0 flex items-center justify-between border-b border-border/50 px-5 py-4">
@@ -276,7 +282,7 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
                   <Flag className="h-4 w-4 text-primary" />
                 </div>
-                <h3 className="text-[1.0625rem]" style={{ fontWeight: 600 }}>新建日程</h3>
+                <h3 className="text-[1.0625rem]" style={{ fontWeight: 600 }}>{t("addTask.title")}</h3>
               </div>
               <div className="flex items-center gap-2">
                 {/* AI toggle */}
@@ -299,12 +305,12 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
               {/* Task text */}
               <div>
-                <label className="text-[0.75rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>任务内容</label>
+                <label className="text-[0.75rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>{t("addTask.titlePlaceholder")}</label>
                 <Input
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSubmit()}
-                  placeholder="例如：明天下午3点团队周会 讨论Q1目标..."
+                  placeholder={isEn ? "e.g.: Team meeting tomorrow at 3pm to discuss Q1 goals..." : "例如：明天下午3点团队周会 讨论Q1目标..."}
                   className="rounded-xl text-[0.9375rem]"
                   autoFocus
                 />
@@ -313,12 +319,12 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
                     {aiAnalyzing ? (
                       <span className="flex items-center gap-1 text-[0.625rem] text-primary">
                         <Loader2 className="h-3 w-3 animate-spin" />
-                        AI 正在分析...
+                        AI {isEn ? "analyzing..." : "正在分析..."}
                       </span>
                     ) : aiApplied ? (
                       <span className="flex items-center gap-1 text-[0.625rem] text-emerald-600">
                         <Check className="h-3 w-3" />
-                        AI 已自动填充属性
+                        AI {isEn ? "auto-filled" : "已自动填充属性"}
                       </span>
                     ) : null}
                   </div>
@@ -328,7 +334,7 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
               {/* Priority */}
               <div>
                 <label className="text-[0.75rem] text-muted-foreground mb-2 block" style={{ fontWeight: 500 }}>
-                  优先级
+                  {t("addTask.priority")}
                   {aiApplied && <span className="ml-1.5 text-[0.5625rem] text-primary bg-primary/10 rounded-full px-1.5 py-0.5">AI</span>}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -361,7 +367,7 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
                 {/* Color picker */}
                 <div>
                   <label className="text-[0.75rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>
-                    颜色标记
+                    {t("addTask.color")}
                     {aiApplied && <span className="ml-1.5 text-[0.5625rem] text-primary bg-primary/10 rounded-full px-1.5 py-0.5">AI</span>}
                   </label>
                   <div className="relative">
@@ -370,7 +376,7 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
                       className="flex w-full items-center gap-2 rounded-xl border border-border/40 px-3 py-2.5 hover:border-border/60 transition-colors"
                     >
                       <div className={`h-4 w-4 rounded-full ${color}`} />
-                      <span className="text-[0.8125rem] flex-1 text-left">{selectedColor?.label || "选择颜色"}</span>
+                      <span className="text-[0.8125rem] flex-1 text-left">{selectedColor?.label || t("addTask.color")}</span>
                       <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${showColors ? "rotate-180" : ""}`} />
                     </button>
                     <AnimatePresence>
@@ -379,7 +385,7 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
                           initial={{ opacity: 0, y: 4, scale: 0.95 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                          className="absolute top-full left-0 right-0 mt-1 z-20 rounded-xl border border-border/50 bg-white p-2 shadow-lg"
+                          className="absolute top-full left-0 right-0 mt-1 z-20 rounded-xl border border-border/50 bg-card p-2 shadow-lg"
                         >
                           <div className="grid grid-cols-4 gap-1.5">
                             {colorTags.map((c) => (
@@ -404,7 +410,7 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
                 {/* Category */}
                 <div>
                   <label className="text-[0.75rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>
-                    分类
+                    {t("addTask.category")}
                     {aiApplied && <span className="ml-1.5 text-[0.5625rem] text-primary bg-primary/10 rounded-full px-1.5 py-0.5">AI</span>}
                   </label>
                   <div className="relative">
@@ -422,7 +428,7 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
                           initial={{ opacity: 0, y: 4, scale: 0.95 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                          className="absolute top-full left-0 right-0 mt-1 z-20 rounded-xl border border-border/50 bg-white py-1 shadow-lg"
+                          className="absolute top-full left-0 right-0 mt-1 z-20 rounded-xl border border-border/50 bg-card py-1 shadow-lg"
                         >
                           {categories.map((c) => (
                             <button
@@ -449,7 +455,7 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[0.75rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>
-                    截止日期
+                    {t("addTask.dueDate")}
                     {aiApplied && dueDate && <span className="ml-1.5 text-[0.5625rem] text-primary bg-primary/10 rounded-full px-1.5 py-0.5">AI</span>}
                   </label>
                   <div className="relative">
@@ -464,7 +470,7 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
                 </div>
                 <div>
                   <label className="text-[0.75rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>
-                    时间
+                    {t("addTask.dueTime")}
                     {aiApplied && dueTime && <span className="ml-1.5 text-[0.5625rem] text-primary bg-primary/10 rounded-full px-1.5 py-0.5">AI</span>}
                   </label>
                   <div className="relative">
@@ -491,7 +497,7 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
                     <div className="rounded-xl border border-primary/15 bg-gradient-to-r from-primary/5 to-purple-50/30 px-4 py-3">
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <Brain className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-[0.6875rem] text-primary" style={{ fontWeight: 600 }}>AI 分析结果</span>
+                        <span className="text-[0.6875rem] text-primary" style={{ fontWeight: 600 }}>{t("addTask.aiReason")}</span>
                       </div>
                       <p className="text-[0.6875rem] text-muted-foreground leading-relaxed">{aiReasoning}</p>
                     </div>
@@ -509,7 +515,7 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
                   className="w-full rounded-xl border-primary/30 text-primary hover:bg-primary/5 gap-1.5"
                 >
                   {aiAnalyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                  让 AI 帮我决定优先级和分类
+                  {isEn ? "Let AI decide priority & category" : "让 AI 帮我决定优先级和分类"}
                 </Button>
               )}
             </div>
@@ -517,18 +523,18 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
             {/* ── Footer ── */}
             <div className="shrink-0 border-t border-border/50 px-5 py-3 flex items-center justify-between gap-3">
               <p className="text-[0.5625rem] text-muted-foreground">
-                {aiEnabled ? "AI 自动填充已开启 · 可在设置中配置 AI 服务" : "可手动选择或开启 AI 自动填充"}
+                {aiEnabled ? (isEn ? "AI auto-fill enabled · Configure in settings" : "AI 自动填充已开启 · 可在设置中配置 AI 服务") : (isEn ? "Manual selection or enable AI auto-fill" : "可手动选择或开启 AI 自动填充")}
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={onClose} className="rounded-xl text-[0.8125rem]">
-                  取消
+                  {t("addTask.cancel")}
                 </Button>
                 <Button
                   onClick={handleSubmit}
                   disabled={!text.trim()}
                   className="rounded-xl bg-primary text-white hover:bg-primary/90 text-[0.8125rem] gap-1 disabled:opacity-40"
                 >
-                  创建日程
+                  {t("addTask.submit")}
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -560,23 +566,29 @@ const defaultAIConfig: AIConfig = {
 const aiProviders = [
   {
     key: "none" as const,
-    label: "本地模拟",
-    desc: "使用内置规则引擎（无需 API Key）",
-    icon: "🧪",
+    label: "🧪",
+    labelZh: "本地模拟",
+    labelEn: "Local Simulation",
+    descZh: "使用内置规则引擎（无需 API Key）",
+    descEn: "Built-in rule engine (no API Key needed)",
     models: [],
   },
   {
     key: "openai" as const,
-    label: "OpenAI",
-    desc: "GPT-4o / GPT-4o-mini",
-    icon: "🤖",
+    label: "🤖",
+    labelZh: "OpenAI",
+    labelEn: "OpenAI",
+    descZh: "GPT-4o / GPT-4o-mini",
+    descEn: "GPT-4o / GPT-4o-mini",
     models: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
   },
   {
     key: "openrouter" as const,
-    label: "OpenRouter",
-    desc: "聚合多模型网关，支持 Claude / Gemini / Llama 等",
-    icon: "🔀",
+    label: "🔀",
+    labelZh: "OpenRouter",
+    labelEn: "OpenRouter",
+    descZh: "聚合多模型网关，支持 Claude / Gemini / Llama 等",
+    descEn: "Multi-model gateway: Claude / Gemini / Llama & more",
     models: [
       "anthropic/claude-sonnet-4",
       "anthropic/claude-3.5-haiku",
@@ -587,14 +599,18 @@ const aiProviders = [
   },
   {
     key: "custom" as const,
-    label: "自定义 API",
-    desc: "兼容 OpenAI 格式的任意端点",
-    icon: "⚙️",
+    label: "⚙️",
+    labelZh: "自定义 API",
+    labelEn: "Custom API",
+    descZh: "兼容 OpenAI 格式的任意端点",
+    descEn: "Any OpenAI-compatible endpoint",
     models: [],
   },
 ];
 
 export function AISettingsPanel() {
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en-US";
   const [config, setConfig] = useState<AIConfig>(() => {
     try {
       const saved = localStorage.getItem("lifenix_ai_config");
@@ -632,8 +648,8 @@ export function AISettingsPanel() {
 
   return (
     <motion.div key="ai" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
-      <h2 className="text-[1.25rem] mb-1" style={{ fontWeight: 600 }}>AI 配置</h2>
-      <p className="text-[0.875rem] text-muted-foreground mb-6">配置 AI 服务提供商，用于任务智能分析、自动排期和日程建议。</p>
+      <h2 className="text-[1.25rem] mb-1" style={{ fontWeight: 600 }}>{t("settings.ai")}</h2>
+      <p className="text-[0.875rem] text-muted-foreground mb-6">{isEn ? "Configure AI service provider for smart task analysis, auto-scheduling and suggestions." : "配置 AI 服务提供商，用于任务智能分析、自动排期和日程建议。"}</p>
 
       <div className="space-y-6 max-w-lg">
         {/* Auto-fill toggle */}
@@ -643,8 +659,8 @@ export function AISettingsPanel() {
               <Sparkles className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <div className="text-[0.875rem]" style={{ fontWeight: 500 }}>AI 自动填充</div>
-              <div className="text-[0.75rem] text-muted-foreground">创建任务时自动分析优先级、分类和时间</div>
+              <div className="text-[0.875rem]" style={{ fontWeight: 500 }}>{isEn ? "AI Auto-fill" : "AI 自动填充"}</div>
+              <div className="text-[0.75rem] text-muted-foreground">{isEn ? "Auto-analyze priority, category & time when creating tasks" : "创建任务时自动分析优先级、分类和时间"}</div>
             </div>
           </div>
           <Switch
@@ -658,7 +674,7 @@ export function AISettingsPanel() {
 
         {/* Provider selection */}
         <div>
-          <h3 className="text-[0.9375rem] mb-3" style={{ fontWeight: 600 }}>AI 服务提供商</h3>
+          <h3 className="text-[0.9375rem] mb-3" style={{ fontWeight: 600 }}>{isEn ? "AI Service Provider" : "AI 服务提供商"}</h3>
           <div className="space-y-2">
             {aiProviders.map((provider) => (
               <button
@@ -670,12 +686,12 @@ export function AISettingsPanel() {
                     : "border-border/20 hover:border-border/40"
                 }`}
               >
-                <span className="text-[1.25rem]">{provider.icon}</span>
+                <span className="text-[1.25rem]">{provider.label}</span>
                 <div className="flex-1 min-w-0">
                   <div className="text-[0.875rem]" style={{ fontWeight: config.provider === provider.key ? 600 : 400 }}>
-                    {provider.label}
+                    {isEn ? provider.labelEn : provider.labelZh}
                   </div>
-                  <div className="text-[0.6875rem] text-muted-foreground">{provider.desc}</div>
+                  <div className="text-[0.6875rem] text-muted-foreground">{isEn ? provider.descEn : provider.descZh}</div>
                 </div>
                 {config.provider === provider.key && (
                   <Check className="h-4 w-4 text-primary shrink-0" />
@@ -700,25 +716,25 @@ export function AISettingsPanel() {
                   type={showKey ? "text" : "password"}
                   value={config.apiKey}
                   onChange={(e) => update({ apiKey: e.target.value })}
-                  placeholder={config.provider === "openai" ? "sk-..." : config.provider === "openrouter" ? "sk-or-..." : "输入 API Key..."}
+                  placeholder={config.provider === "openai" ? "sk-..." : config.provider === "openrouter" ? "sk-or-..." : (isEn ? "Enter API Key..." : "输入 API Key...")}
                   className="rounded-xl pr-16"
                 />
                 <button
                   onClick={() => setShowKey(!showKey)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-[0.6875rem] text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg hover:bg-muted/40"
                 >
-                  {showKey ? "隐藏" : "显示"}
+                  {showKey ? (isEn ? "Hide" : "隐藏") : (isEn ? "Show" : "显示")}
                 </button>
               </div>
               <p className="mt-1 text-[0.625rem] text-muted-foreground/60">
-                API Key 仅存储在你的浏览器本地，不会上传到任何服务器
+                API Key {isEn ? "is stored locally in your browser only — never uploaded to any server" : "仅存储在你的浏览器本地，不会上传到任何服务器"}
               </p>
             </div>
 
             {/* Model selector */}
             {selectedProvider && selectedProvider.models.length > 0 && (
               <div>
-                <label className="text-[0.8125rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>模型</label>
+                <label className="text-[0.8125rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>{isEn ? "Model" : "模型"}</label>
                 <select
                   value={config.model}
                   onChange={(e) => update({ model: e.target.value })}
@@ -746,7 +762,7 @@ export function AISettingsPanel() {
 
             {config.provider === "custom" && (
               <div>
-                <label className="text-[0.8125rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>模型名称</label>
+                <label className="text-[0.8125rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>{isEn ? "Model Name" : "模型名称"}</label>
                 <Input
                   value={config.model}
                   onChange={(e) => update({ model: e.target.value })}
@@ -762,11 +778,11 @@ export function AISettingsPanel() {
                 <CircleAlert className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-[0.6875rem] text-blue-800 leading-relaxed">
-                    OpenRouter 是一个 AI 模型聚合网关，支持数百种模型。前往{" "}
+                    OpenRouter {isEn ? "is a multi-model AI gateway supporting hundreds of models. Visit" : "是一个 AI 模型聚合网关，支持数百种模型。前往"}{" "}
                     <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer" className="underline" style={{ fontWeight: 500 }}>
                       openrouter.ai
                     </a>{" "}
-                    注册并获取 API Key。
+                    {isEn ? "to sign up and get your API Key." : "注册并获取 API Key。"}
                   </p>
                 </div>
               </div>
@@ -786,13 +802,13 @@ export function AISettingsPanel() {
             {testStatus === "success" && <Check className="h-3.5 w-3.5 text-emerald-600" />}
             {testStatus === "error" && <CircleAlert className="h-3.5 w-3.5 text-destructive" />}
             {testStatus === "idle" && <Zap className="h-3.5 w-3.5" />}
-            {testStatus === "testing" ? "测试中..." : testStatus === "success" ? "连接成功" : testStatus === "error" ? "连接失败" : "测试连接"}
+            {testStatus === "testing" ? (isEn ? "Testing..." : "测试中...") : testStatus === "success" ? (isEn ? "Connected" : "连接成功") : testStatus === "error" ? (isEn ? "Failed" : "连接失败") : (isEn ? "Test Connection" : "测试连接")}
           </Button>
           <Button
             onClick={handleSave}
             className="rounded-xl bg-primary text-white hover:bg-primary/90 gap-1"
           >
-            {saved ? <><Check className="h-3.5 w-3.5" />已保存</> : "保存配置"}
+            {saved ? <><Check className="h-3.5 w-3.5" />{isEn ? "Saved" : "已保存"}</> : (isEn ? "Save Config" : "保存配置")}
           </Button>
         </div>
       </div>

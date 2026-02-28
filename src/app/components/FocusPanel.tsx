@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { useLanguage } from "./LanguageContext";
 import {
   Target,
   Play,
@@ -54,11 +55,15 @@ function loadTreeLevel(): number {
   }
 }
 
-function formatDuration(seconds: number): string {
+function formatDuration(seconds: number, isEn: boolean): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `${h}小时${m}分钟`;
-  return `${m}分钟`;
+  if (isEn) {
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  }
+  if (h > 0) return `${h}h${m}m`;
+  return `${m}m`;
 }
 
 function formatShortDuration(seconds: number): string {
@@ -68,19 +73,19 @@ function formatShortDuration(seconds: number): string {
 }
 
 /* ── Mini Growth Tree ── */
-function MiniGrowthTree({ level }: { level: number }) {
+function MiniGrowthTree({ level, t }: { level: number; t: (key: string) => string }) {
   const stages = [
-    { icon: Sprout, label: "种子", color: "text-green-600/40" },
-    { icon: Sprout, label: "发芽", color: "text-green-500/60" },
-    { icon: Sprout, label: "嫩芽", color: "text-green-500" },
-    { icon: TreePine, label: "小苗", color: "text-green-500/60" },
-    { icon: TreePine, label: "幼树", color: "text-green-500/80" },
-    { icon: TreePine, label: "小树", color: "text-green-500" },
-    { icon: TreePine, label: "大树", color: "text-emerald-500" },
-    { icon: Flower2, label: "开花", color: "text-pink-500" },
-    { icon: Flower2, label: "繁盛", color: "text-pink-400" },
-    { icon: Star, label: "结果", color: "text-amber-500" },
-    { icon: Trophy, label: "丰收", color: "text-yellow-500" },
+    { icon: Sprout, labelKey: "tree.seed", color: "text-green-600/40" },
+    { icon: Sprout, labelKey: "tree.sprout", color: "text-green-500/60" },
+    { icon: Sprout, labelKey: "tree.seedling", color: "text-green-500" },
+    { icon: TreePine, labelKey: "tree.sapling", color: "text-green-500/60" },
+    { icon: TreePine, labelKey: "tree.young", color: "text-green-500/80" },
+    { icon: TreePine, labelKey: "tree.small", color: "text-green-500" },
+    { icon: TreePine, labelKey: "tree.big", color: "text-emerald-500" },
+    { icon: Flower2, labelKey: "tree.bloom", color: "text-pink-500" },
+    { icon: Flower2, labelKey: "tree.lush", color: "text-pink-400" },
+    { icon: Star, labelKey: "tree.fruit", color: "text-amber-500" },
+    { icon: Trophy, labelKey: "tree.harvest", color: "text-yellow-500" },
   ];
   const stage = stages[Math.min(level, stages.length - 1)];
   const Icon = stage.icon;
@@ -91,7 +96,7 @@ function MiniGrowthTree({ level }: { level: number }) {
         <Icon className={`h-8 w-8 ${stage.color}`} />
       </motion.div>
       <div>
-        <div className="text-[0.75rem]" style={{ fontWeight: 600 }}>{stage.label}</div>
+        <div className="text-[0.75rem]" style={{ fontWeight: 600 }}>{t(stage.labelKey)}</div>
         <div className="flex gap-0.5 mt-0.5">
           {Array.from({ length: 11 }).map((_, i) => (
             <div key={i} className={`h-1 w-1 rounded-full ${i <= level ? "bg-emerald-400" : "bg-muted"}`} />
@@ -103,24 +108,24 @@ function MiniGrowthTree({ level }: { level: number }) {
 }
 
 /* ── Trend Chart (simple bar chart) ── */
-function TrendChart({ sessions }: { sessions: FocusSession[] }) {
+function TrendChart({ sessions, t, dateLocale }: { sessions: FocusSession[]; t: (key: string) => string; dateLocale: string }) {
   // Get last 7 days data
   const chartData = useMemo(() => {
     const days: { label: string; minutes: number; count: number }[] = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const dayStr = d.toLocaleDateString("zh-CN", { weekday: "short" });
+      const dayStr = d.toLocaleDateString(dateLocale, { weekday: "short" });
       const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
       const daySessions = sessions.filter((s) => {
         const sd = new Date(s.date);
         return sd.getFullYear() === d.getFullYear() && sd.getMonth() === d.getMonth() && sd.getDate() === d.getDate();
       });
       const totalMinutes = daySessions.reduce((sum, s) => sum + Math.floor(s.duration / 60), 0);
-      days.push({ label: i === 0 ? "今天" : dayStr, minutes: totalMinutes, count: daySessions.length });
+      days.push({ label: i === 0 ? t("focusPanel.today") : dayStr, minutes: totalMinutes, count: daySessions.length });
     }
     return days;
-  }, [sessions]);
+  }, [sessions, t, dateLocale]);
 
   const maxMinutes = Math.max(...chartData.map((d) => d.minutes), 30);
 
@@ -137,7 +142,7 @@ function TrendChart({ sessions }: { sessions: FocusSession[] }) {
                 className="w-full max-w-8 rounded-t-md bg-gradient-to-t from-primary/80 to-primary/40 relative group cursor-default"
               >
                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-foreground text-background text-[0.5625rem] px-1.5 py-0.5 rounded whitespace-nowrap z-10">
-                  {d.minutes}分钟
+                  {t("focusPanel.nMinutes").replace("{n}", String(d.minutes))}
                 </div>
               </motion.div>
             )}
@@ -155,6 +160,8 @@ function TrendChart({ sessions }: { sessions: FocusSession[] }) {
 /* ── Main FocusPanel ── */
 export function FocusPanel() {
   const navigate = useNavigate();
+  const { t, locale, dateLocale } = useLanguage();
+  const isEn = locale === "en-US";
   const [sessions] = useState<FocusSession[]>(loadSessions);
   const [treeLevel] = useState(loadTreeLevel);
   const [historyFilter, setHistoryFilter] = useState<"all" | "study" | "work">("all");
@@ -222,8 +229,8 @@ export function FocusPanel() {
                 <Target className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-[1.25rem] sm:text-[1.5rem]" style={{ fontWeight: 700 }}>专注空间</h2>
-                <p className="text-[0.8125rem] text-white/60">沉浸式深度工作，让效率飞升</p>
+                <h2 className="text-[1.25rem] sm:text-[1.5rem]" style={{ fontWeight: 700 }}>{t("focusPanel.title")}</h2>
+                <p className="text-[0.8125rem] text-white/60">{t("focusPanel.subtitle")}</p>
               </div>
             </div>
 
@@ -231,14 +238,14 @@ export function FocusPanel() {
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4">
               <div className="flex items-center gap-1.5 bg-white/10 rounded-lg px-3 py-1.5 backdrop-blur-sm">
                 <Flame className="h-3.5 w-3.5 text-orange-300" />
-                <span className="text-[0.75rem]" style={{ fontWeight: 500 }}>连续 {currentStreak} 天</span>
+                <span className="text-[0.75rem]" style={{ fontWeight: 500 }}>{t("focusPanel.streak").replace("{n}", String(currentStreak))}</span>
               </div>
               <div className="flex items-center gap-1.5 bg-white/10 rounded-lg px-3 py-1.5 backdrop-blur-sm">
                 <Clock className="h-3.5 w-3.5 text-cyan-300" />
-                <span className="text-[0.75rem]" style={{ fontWeight: 500 }}>累计 {totalFocusMinutes} 分钟</span>
+                <span className="text-[0.75rem]" style={{ fontWeight: 500 }}>{t("focusPanel.totalMinutes").replace("{n}", String(totalFocusMinutes))}</span>
               </div>
               <div className="flex items-center gap-1.5 bg-white/10 rounded-lg px-3 py-1.5 backdrop-blur-sm">
-                <MiniGrowthTree level={treeLevel} />
+                <MiniGrowthTree level={treeLevel} t={t} />
               </div>
             </div>
           </div>
@@ -250,7 +257,7 @@ export function FocusPanel() {
               style={{ fontWeight: 700 }}
             >
               <Play className="h-5 w-5 mr-2" />
-              开始专注
+              {t("focusPanel.startFocus")}
             </Button>
           </motion.div>
         </div>
@@ -259,10 +266,10 @@ export function FocusPanel() {
       {/* ═══════ Stats Cards ═══════ */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "总专注次数", value: totalSessions, icon: Target, color: "text-primary", bg: "bg-primary/10" },
-          { label: "总时长(分钟)", value: totalFocusMinutes, icon: Clock, color: "text-blue-600", bg: "bg-blue-50" },
-          { label: "连续天数", value: currentStreak, icon: Flame, color: "text-orange-600", bg: "bg-orange-50" },
-          { label: "平均评分", value: avgRating || "-", icon: Star, color: "text-amber-600", bg: "bg-amber-50" },
+          { label: t("focusPanel.totalSessions"), value: totalSessions, icon: Target, color: "text-primary", bg: "bg-primary/10" },
+          { label: t("focusPanel.totalDuration"), value: totalFocusMinutes, icon: Clock, color: "text-blue-600", bg: "bg-blue-50" },
+          { label: t("focusPanel.streakDays"), value: currentStreak, icon: Flame, color: "text-orange-600", bg: "bg-orange-50" },
+          { label: t("focusPanel.avgRating"), value: avgRating || "-", icon: Star, color: "text-amber-600", bg: "bg-amber-50" },
         ].map((s, i) => (
           <motion.div
             key={i}
@@ -295,23 +302,23 @@ export function FocusPanel() {
                 <TrendingUp className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <h3 className="text-[0.875rem]" style={{ fontWeight: 600 }}>专注趋势</h3>
-                <p className="text-[0.6875rem] text-muted-foreground">近 7 天专注时长</p>
+                <h3 className="text-[0.875rem]" style={{ fontWeight: 600 }}>{t("focusPanel.trend")}</h3>
+                <p className="text-[0.6875rem] text-muted-foreground">{t("focusPanel.last7Days")}</p>
               </div>
             </div>
             <Badge className="bg-primary/10 text-primary border-0 text-[0.625rem]">
               <BarChart3 className="h-2.5 w-2.5 mr-1" />
-              周报
+              {t("focusPanel.weeklyReport")}
             </Badge>
           </div>
 
           {sessions.length > 0 ? (
-            <TrendChart sessions={sessions} />
+            <TrendChart sessions={sessions} t={t} dateLocale={dateLocale} />
           ) : (
             <div className="flex flex-col items-center justify-center h-32 text-center">
               <BarChart3 className="h-8 w-8 text-muted-foreground/20 mb-2" />
-              <p className="text-[0.75rem] text-muted-foreground/50">暂无数据</p>
-              <p className="text-[0.6875rem] text-muted-foreground/30">开始你的第一次专注吧</p>
+              <p className="text-[0.75rem] text-muted-foreground/50">{t("focusPanel.noData")}</p>
+              <p className="text-[0.6875rem] text-muted-foreground/30">{t("focusPanel.startFirst")}</p>
             </div>
           )}
 
@@ -327,9 +334,9 @@ export function FocusPanel() {
                 const weekMinutes = Math.floor(weekSessions.reduce((sum, s) => sum + s.duration, 0) / 60);
                 const weekAvg = weekSessions.length > 0 ? Math.floor(weekMinutes / 7) : 0;
                 return [
-                  { label: "本周时长", value: `${weekMinutes}分钟` },
-                  { label: "本周次数", value: `${weekSessions.length}次` },
-                  { label: "日均", value: `${weekAvg}分钟` },
+                  { label: t("focusPanel.weekDuration"), value: t("focusPanel.nMinutes").replace("{n}", String(weekMinutes)) },
+                  { label: t("focusPanel.weekCount"), value: t("focusPanel.nTimes").replace("{n}", String(weekSessions.length)) },
+                  { label: t("focusPanel.dailyAvg"), value: t("focusPanel.nMinutes").replace("{n}", String(weekAvg)) },
                 ].map((item, i) => (
                   <div key={i} className="text-center">
                     <div className="text-[0.875rem] text-foreground" style={{ fontWeight: 600 }}>{item.value}</div>
@@ -354,17 +361,17 @@ export function FocusPanel() {
                 <Calendar className="h-4 w-4 text-emerald-600" />
               </div>
               <div>
-                <h3 className="text-[0.875rem]" style={{ fontWeight: 600 }}>专注记录</h3>
-                <p className="text-[0.6875rem] text-muted-foreground">共 {sessions.length} 次专注</p>
+                <h3 className="text-[0.875rem]" style={{ fontWeight: 600 }}>{t("focusPanel.history")}</h3>
+                <p className="text-[0.6875rem] text-muted-foreground">{t("focusPanel.totalNSessions").replace("{n}", String(sessions.length))}</p>
               </div>
             </div>
 
             {/* Filter */}
             <div className="flex items-center gap-1 rounded-lg bg-muted/60 p-0.5">
               {([
-                { key: "all" as const, label: "全部" },
-                { key: "study" as const, label: "学习" },
-                { key: "work" as const, label: "工作" },
+                { key: "all" as const, label: t("focusPanel.filterAll") },
+                { key: "study" as const, label: t("focusPanel.filterStudy") },
+                { key: "work" as const, label: t("focusPanel.filterWork") },
               ]).map((f) => (
                 <button
                   key={f.key}
@@ -403,13 +410,13 @@ export function FocusPanel() {
                         <Badge className={`shrink-0 border-0 text-[0.5rem] px-1.5 py-0 ${
                           session.type === "study" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
                         }`}>
-                          {session.type === "study" ? "学习" : "工作"}
+                          {session.type === "study" ? t("focusPanel.study") : t("focusPanel.work")}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2 mt-0.5 text-[0.6875rem] text-muted-foreground">
-                        <span>{new Date(session.date).toLocaleDateString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                        <span>{new Date(session.date).toLocaleDateString(dateLocale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                         <span className="text-muted-foreground/30">·</span>
-                        <span>{formatDuration(session.duration)}</span>
+                        <span>{formatDuration(session.duration, isEn)}</span>
                         {session.rating > 0 && (
                           <>
                             <span className="text-muted-foreground/30">·</span>
@@ -428,7 +435,7 @@ export function FocusPanel() {
                         {formatShortDuration(session.duration)}
                       </div>
                       <div className="text-[0.5625rem] text-muted-foreground">
-                        {session.microTasksDone}/{session.microTasksTotal} 任务
+                        {session.microTasksDone}/{session.microTasksTotal} {isEn ? "tasks" : "tasks"}
                       </div>
                     </div>
                   </div>
@@ -440,14 +447,14 @@ export function FocusPanel() {
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 mb-3">
                 <Target className="h-6 w-6 text-muted-foreground/20" />
               </div>
-              <p className="text-[0.8125rem] text-muted-foreground/50" style={{ fontWeight: 500 }}>暂无专注记录</p>
-              <p className="text-[0.6875rem] text-muted-foreground/30 mt-1">点击「开始专注」开启你的第一次深度工作</p>
+              <p className="text-[0.8125rem] text-muted-foreground/50" style={{ fontWeight: 500 }}>{t("focusPanel.noRecords")}</p>
+              <p className="text-[0.6875rem] text-muted-foreground/30 mt-1">{t("focusPanel.noRecordsHint")}</p>
               <Button
                 onClick={() => navigate("/focus")}
                 className="mt-4 rounded-xl bg-primary text-white text-[0.8125rem]"
               >
                 <Play className="h-3.5 w-3.5 mr-1.5" />
-                立即开始
+                {t("focusPanel.startNow")}
               </Button>
             </div>
           )}

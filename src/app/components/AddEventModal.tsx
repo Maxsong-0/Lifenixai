@@ -5,7 +5,8 @@ import { Badge } from "./ui/badge";
 import { Switch } from "./ui/switch";
 import { motion, AnimatePresence } from "motion/react";
 import { format, addDays } from "date-fns";
-import { zhCN } from "date-fns/locale";
+import { zhCN, enUS as enUSDateFns } from "date-fns/locale";
+import { useLanguage } from "./LanguageContext";
 import {
   X,
   Sparkles,
@@ -237,6 +238,9 @@ function simulateAIAnalysis(text: string): Promise<{
 
 /* ═══════════════ Component ═══════════════ */
 export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModalProps) {
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en-US";
+  const fnsLocale = isEn ? enUSDateFns : zhCN;
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [startHour, setStartHour] = useState(9);
@@ -368,7 +372,7 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={closeAllDropdowns}
-            className="fixed inset-x-3 top-[5%] z-[81] mx-auto max-w-lg rounded-2xl bg-white shadow-2xl sm:inset-x-auto sm:w-full max-h-[90vh] flex flex-col overflow-hidden"
+            className="fixed inset-x-3 top-[5%] z-[81] mx-auto max-w-lg rounded-2xl bg-card shadow-2xl sm:inset-x-auto sm:w-full max-h-[90vh] flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="shrink-0 flex items-center justify-between border-b border-border/50 px-5 py-3.5">
@@ -457,7 +461,7 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 4, scale: 0.95 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-border/50 bg-white shadow-lg max-h-48 overflow-y-auto"
+                        className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-border/50 bg-card shadow-lg max-h-48 overflow-y-auto"
                       >
                         {hourOptions.map((h) => (
                           <button
@@ -493,7 +497,7 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 4, scale: 0.95 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-border/50 bg-white py-1 shadow-lg"
+                        className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-border/50 bg-card py-1 shadow-lg"
                       >
                         {durations.map((d) => (
                           <button
@@ -578,7 +582,7 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 4, scale: 0.95 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-border/50 bg-white p-2 shadow-lg"
+                        className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-border/50 bg-card p-2 shadow-lg"
                       >
                         <div className="grid grid-cols-5 gap-1.5">
                           {colorTags.map((c) => (
@@ -612,7 +616,7 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 4, scale: 0.95 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-border/50 bg-white py-1 shadow-lg max-h-48 overflow-y-auto"
+                        className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-border/50 bg-card py-1 shadow-lg max-h-48 overflow-y-auto"
                       >
                         {categories.map((c) => (
                           <button key={c.key} onClick={() => { setCategory(c.key); setShowCategories(false); }} className={`flex w-full items-center gap-2 px-3 py-1.5 text-[0.75rem] hover:bg-muted/40 transition-colors ${category === c.key ? "bg-primary/5 text-primary" : ""}`} style={{ fontWeight: category === c.key ? 600 : 400 }}>

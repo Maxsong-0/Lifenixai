@@ -51,6 +51,7 @@ import {
   Tv,
   Globe,
 } from "lucide-react";
+import { useLanguage } from "./LanguageContext";
 
 /* ═══════════════════════════════════════════
    Types & Constants

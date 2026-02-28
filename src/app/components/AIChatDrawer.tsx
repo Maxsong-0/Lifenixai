@@ -20,6 +20,7 @@ import {
   CalendarDays,
   ScanText,
 } from "lucide-react";
+import { useLanguage } from "./LanguageContext";
 
 /* ═══════════════ Types ═══════════════ */
 interface ChatAttachment {
@@ -55,16 +56,6 @@ interface ParseItem {
 }
 
 /* ═══════════════ Static Data ═══════════════ */
-const initialChat: ChatMessage[] = [
-  {
-    id: "1",
-    role: "ai",
-    content:
-      "你好！我是你的 Lifenix AI 助手。今天你有 6 个任务和 6 个日程安排。我可以帮你优化时间安排、管理任务优先级，或者回答任何问题。\n\n你也可以直接发送聊天截图或文档附件，我会自动提取其中的日程和待办事项。",
-    time: "09:00",
-  },
-];
-
 const aiResponses: Record<string, string> = {
   default:
     "我理解了你的需求。让我帮你分析一下，给出最佳建议...\n\n基于你当前的任务和日程，我建议你：\n1. 优先完成高优先级任务\n2. 在会议间隙处理邮件\n3. 下午安排健身时间放松",
@@ -107,7 +98,7 @@ function formatFileSize(bytes: number) {
 }
 
 function nowTime() {
-  return new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+  return new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
 /* ═══════════════ Component ═══════════════ */
@@ -117,7 +108,13 @@ interface AIChatDrawerProps {
 }
 
 export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
-  const [chat, setChat] = useState<ChatMessage[]>(initialChat);
+  const { t } = useLanguage();
+  const [chat, setChat] = useState<ChatMessage[]>(() => [{
+    id: "1",
+    role: "ai" as const,
+    content: t("ai.welcome"),
+    time: "09:00",
+  }]);
   const [chatInput, setChatInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<ChatAttachment[]>([]);
@@ -266,18 +263,18 @@ export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
           </div>
           <div>
             <h3 className="text-[0.875rem]" style={{ fontWeight: 600 }}>
-              AI 助手
+              {t("ai.title")}
             </h3>
             <div className="flex items-center gap-1">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              <span className="text-[0.6875rem] text-muted-foreground">在线</span>
+              <span className="text-[0.6875rem] text-muted-foreground">{t("ai.online")}</span>
             </div>
           </div>
         </div>
         <button
           onClick={onClose}
           className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
-          title="收起面板"
+          title={t("ai.collapsePanel")}
         >
           <PanelRightClose className="h-4 w-4" />
         </button>
@@ -304,10 +301,10 @@ export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
             >
               <Paperclip className="h-8 w-8 text-primary mb-2" />
               <span className="text-[0.875rem] text-primary" style={{ fontWeight: 600 }}>
-                松手上传附件
+                {t("ai.dropAttachment")}
               </span>
               <span className="text-[0.6875rem] text-primary/60 mt-0.5">
-                图片、PDF、文档均可
+                {t("ai.dropHint")}
               </span>
             </motion.div>
           )}
@@ -373,7 +370,7 @@ export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
 
                 {/* Parse result card (AI) */}
                 {msg.parseResult && (
-                  <div className="rounded-2xl border border-border/40 bg-white overflow-hidden mt-1">
+                  <div className="rounded-2xl border border-border/40 bg-card overflow-hidden mt-1">
                     {/* Parse header */}
                     <div className="flex items-center gap-2 px-3 py-2.5 bg-gradient-to-r from-primary/5 to-transparent border-b border-border/20">
                       <ScanText className="h-3.5 w-3.5 text-primary" />
@@ -382,8 +379,8 @@ export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
                         style={{ fontWeight: 600 }}
                       >
                         {msg.parseResult.type === "chat-screenshot"
-                          ? "聊天截图解析"
-                          : "文档智能提取"}
+                          ? t("ai.chatParse")
+                          : t("ai.docParse")}
                       </span>
                     </div>
 
@@ -443,10 +440,10 @@ export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
                           >
                             {item.added ? (
                               <span className="flex items-center gap-0.5">
-                                <CircleCheck className="h-2.5 w-2.5" /> 已加入
+                                <CircleCheck className="h-2.5 w-2.5" /> {t("ai.added")}
                               </span>
                             ) : (
-                              "+ 加入"
+                              t("ai.addItem")
                             )}
                           </button>
                         </div>
@@ -478,8 +475,8 @@ export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-primary/60" />
                 <span className="text-[0.6875rem] text-muted-foreground">
                   {pendingAttachments.length === 0 && chat[chat.length - 1]?.attachments
-                    ? "正在解析附件..."
-                    : "思考中..."}
+                    ? t("ai.parsingAttachment")
+                    : t("ai.typing")}
                 </span>
               </div>
             </div>
@@ -550,7 +547,7 @@ export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
       {pendingAttachments.length === 0 && (
         <div className="shrink-0 border-t border-border/30 px-4 py-2">
           <div className="flex flex-wrap gap-1.5">
-            {["优化日程", "任务优先级", "效率建议"].map((q) => (
+            {[t("ai.prompt.optimize"), t("ai.prompt.priority"), t("ai.prompt.efficiency")].map((q) => (
               <button
                 key={q}
                 onClick={() => setChatInput(q)}
@@ -570,7 +567,7 @@ export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
           <button
             onClick={() => fileInputRef.current?.click()}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
-            title="添加附件"
+            title={t("ai.addAttachment")}
           >
             <Paperclip className="h-4 w-4" />
           </button>
@@ -590,8 +587,8 @@ export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
           <Input
             placeholder={
               pendingAttachments.length > 0
-                ? "添加说明（可选）..."
-                : "向 AI 提问 或 粘贴附件..."
+                ? t("ai.inputPlaceholderAtt")
+                : t("ai.inputPlaceholder")
             }
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
@@ -610,7 +607,7 @@ export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
         {/* Hint line */}
         <div className="mt-1.5 flex items-center gap-1 text-[0.5625rem] text-muted-foreground/50">
           <Paperclip className="h-2.5 w-2.5" />
-          <span>支持图片、PDF、文档 · 拖拽到聊天区域也可上传</span>
+          <span>{t("ai.attachmentHint")}</span>
         </div>
       </div>
     </>
@@ -627,7 +624,7 @@ export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
             animate={{ width: 340 }}
             exit={{ width: 0 }}
             transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-            className="hidden md:flex shrink-0 flex-col border-l border-border/50 bg-white overflow-hidden"
+            className="hidden md:flex shrink-0 flex-col border-l border-border/50 bg-card overflow-hidden"
             style={{ zIndex: 1 }}
           >
             <div className="flex h-full w-[340px] flex-col">{chatContent}</div>
@@ -652,7 +649,7 @@ export function AIChatDrawer({ open, onClose }: AIChatDrawerProps) {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-x-0 bottom-0 z-50 flex h-[85vh] flex-col rounded-t-2xl bg-white shadow-2xl md:hidden"
+              className="fixed inset-x-0 bottom-0 z-50 flex h-[85vh] flex-col rounded-t-2xl bg-card shadow-2xl md:hidden"
             >
               {chatContent}
             </motion.div>

@@ -20,7 +20,8 @@ import {
   getDay,
   isSameMonth,
 } from "date-fns";
-import { zhCN } from "date-fns/locale";
+import { zhCN, enUS as enUSDateFns } from "date-fns/locale";
+import { useLanguage } from "./LanguageContext";
 import {
   CalendarDays,
   List,
@@ -93,102 +94,51 @@ interface ScheduleEvent {
 /* ═══════════════ Mock Data ═══════════════ */
 const today = new Date();
 
-const mockEvents: ScheduleEvent[] = [
-  {
-    id: "1", title: "深度工作：产品文档", date: today, startHour: 9, duration: 2,
-    color: "bg-blue-500", priority: "high", status: "in_progress", category: "工作",
-    tags: ["产品", "文档"], energyLevel: "high",
-    subtasks: [
-      { id: "s1", text: "撰写需求概述", done: true },
-      { id: "s2", text: "绘制流程图", done: false },
-      { id: "s3", text: "评审反馈整合", done: false },
-    ],
-  },
-  {
-    id: "2", title: "团队站会", date: today, startHour: 11, duration: 0.5,
-    color: "bg-purple-500", priority: "medium", status: "todo", category: "会议",
-    tags: ["团队"], hasMeeting: true, location: "线上 · Zoom", isRecurring: true,
-  },
-  {
-    id: "3", title: "代码审查 - PR #482", date: today, startHour: 14, duration: 1,
-    color: "bg-cyan-500", priority: "high", status: "todo", category: "开发",
-    tags: ["代码审查", "前端"],
-  },
-  {
-    id: "4", title: "客户方案演示", date: today, startHour: 15.5, duration: 1,
-    color: "bg-amber-500", priority: "urgent", status: "todo", category: "会议",
-    tags: ["客户", "演示"], hasMeeting: true, location: "会议室 A",
-  },
-  {
-    id: "5", title: "健身 · HIIT 训练", date: today, startHour: 17.5, duration: 1,
-    color: "bg-emerald-500", priority: "low", status: "todo", category: "健康",
-    tags: ["运动"], energyLevel: "medium",
-  },
-  {
-    id: "6", title: "阅读《系统之美》", date: today, startHour: 20, duration: 1,
-    color: "bg-rose-400", priority: "low", status: "todo", category: "学习",
-    tags: ["阅读"], energyLevel: "low",
-  },
-  {
-    id: "7", title: "Sprint 回顾会", date: addDays(today, 1), startHour: 10, duration: 1.5,
-    color: "bg-indigo-500", priority: "medium", status: "todo", category: "会议",
-    tags: ["敏捷", "团队"], hasMeeting: true, isRecurring: true,
-  },
-  {
-    id: "8", title: "API 接口开发", date: addDays(today, 1), startHour: 13, duration: 3,
-    color: "bg-blue-500", priority: "high", status: "todo", category: "开发",
-    tags: ["后端", "API"], energyLevel: "high",
-    subtasks: [
-      { id: "s4", text: "设计接口结构", done: true },
-      { id: "s5", text: "编写业务逻辑", done: false },
-      { id: "s6", text: "单元测试", done: false },
-    ],
-  },
-  {
-    id: "9", title: "设计评审", date: addDays(today, 2), startHour: 11, duration: 1,
-    color: "bg-pink-500", priority: "medium", status: "todo", category: "设计",
-    tags: ["UI", "评审"],
-  },
-  {
-    id: "10", title: "数据库优化", date: addDays(today, 2), startHour: 14, duration: 2,
-    color: "bg-teal-500", priority: "high", status: "blocked", category: "开发",
-    tags: ["数据库", "性能"],
-  },
-  {
-    id: "11", title: "周报撰写", date: addDays(today, 4), startHour: 16, duration: 1,
-    color: "bg-gray-500", priority: "medium", status: "todo", category: "工作",
-    tags: ["周报"],
-  },
-  {
-    id: "12", title: "AI 功能原型设计", date: addDays(today, 3), startHour: 9, duration: 3,
-    color: "bg-violet-500", priority: "high", status: "todo", category: "设计",
-    tags: ["AI", "原型"], energyLevel: "high", aiSuggested: true,
-  },
-  {
-    id: "13", title: "晨跑 · 5km", date: addDays(today, 1), startHour: 6, duration: 1,
-    color: "bg-emerald-400", priority: "low", status: "todo", category: "健康",
-    tags: ["运动", "晨练"], energyLevel: "medium",
-  },
-  {
-    id: "14", title: "深夜复盘 & 日记", date: today, startHour: 22.5, duration: 0.5,
-    color: "bg-indigo-400", priority: "low", status: "todo", category: "个人",
-    tags: ["反思"], energyLevel: "low",
-  },
+// Mock event templates — translated inside component via t()
+const _mockTpl = [
+  { id: "1", tk: "cal.mock.1", d: 0, sh: 9, dur: 2, col: "bg-blue-500", pri: "high" as Priority, st: "in_progress" as Status, ck: "cal.mock.cat.work", tgs: ["cal.mock.tag.product","cal.mock.tag.doc"], el: "high" as const, subs: [{id:"s1",tk:"cal.mock.sub.1",done:true},{id:"s2",tk:"cal.mock.sub.2",done:false},{id:"s3",tk:"cal.mock.sub.3",done:false}] },
+  { id: "2", tk: "cal.mock.2", d: 0, sh: 11, dur: 0.5, col: "bg-purple-500", pri: "medium" as Priority, st: "todo" as Status, ck: "cal.mock.cat.meeting", tgs: ["cal.mock.tag.team"], meet: true, lk: "cal.mock.loc.1", rec: true },
+  { id: "3", tk: "cal.mock.3", d: 0, sh: 14, dur: 1, col: "bg-cyan-500", pri: "high" as Priority, st: "todo" as Status, ck: "cal.mock.cat.dev", tgs: ["cal.mock.tag.codeReview","cal.mock.tag.frontend"] },
+  { id: "4", tk: "cal.mock.4", d: 0, sh: 15.5, dur: 1, col: "bg-amber-500", pri: "urgent" as Priority, st: "todo" as Status, ck: "cal.mock.cat.meeting", tgs: ["cal.mock.tag.client","cal.mock.tag.demo"], meet: true, lk: "cal.mock.loc.2" },
+  { id: "5", tk: "cal.mock.5", d: 0, sh: 17.5, dur: 1, col: "bg-emerald-500", pri: "low" as Priority, st: "todo" as Status, ck: "cal.mock.cat.health", tgs: ["cal.mock.tag.exercise"], el: "medium" as const },
+  { id: "6", tk: "cal.mock.6", d: 0, sh: 20, dur: 1, col: "bg-rose-400", pri: "low" as Priority, st: "todo" as Status, ck: "cal.mock.cat.learning", tgs: ["cal.mock.tag.reading"], el: "low" as const },
+  { id: "7", tk: "cal.mock.7", d: 1, sh: 10, dur: 1.5, col: "bg-indigo-500", pri: "medium" as Priority, st: "todo" as Status, ck: "cal.mock.cat.meeting", tgs: ["cal.mock.tag.agile","cal.mock.tag.team"], meet: true, rec: true },
+  { id: "8", tk: "cal.mock.8", d: 1, sh: 13, dur: 3, col: "bg-blue-500", pri: "high" as Priority, st: "todo" as Status, ck: "cal.mock.cat.dev", tgs: ["cal.mock.tag.backend","cal.mock.tag.ai"], el: "high" as const, subs: [{id:"s4",tk:"cal.mock.sub.4",done:true},{id:"s5",tk:"cal.mock.sub.5",done:false},{id:"s6",tk:"cal.mock.sub.6",done:false}] },
+  { id: "9", tk: "cal.mock.9", d: 2, sh: 11, dur: 1, col: "bg-pink-500", pri: "medium" as Priority, st: "todo" as Status, ck: "cal.mock.cat.design", tgs: ["cal.mock.tag.ui","cal.mock.tag.review"] },
+  { id: "10", tk: "cal.mock.10", d: 2, sh: 14, dur: 2, col: "bg-teal-500", pri: "high" as Priority, st: "blocked" as Status, ck: "cal.mock.cat.dev", tgs: ["cal.mock.tag.db","cal.mock.tag.perf"] },
+  { id: "11", tk: "cal.mock.11", d: 4, sh: 16, dur: 1, col: "bg-gray-500", pri: "medium" as Priority, st: "todo" as Status, ck: "cal.mock.cat.work", tgs: ["cal.mock.tag.weeklyReport"] },
+  { id: "12", tk: "cal.mock.12", d: 3, sh: 9, dur: 3, col: "bg-violet-500", pri: "high" as Priority, st: "todo" as Status, ck: "cal.mock.cat.design", tgs: ["cal.mock.tag.ai","cal.mock.tag.prototype"], el: "high" as const, aiSuggested: true },
+  { id: "13", tk: "cal.mock.13", d: 1, sh: 6, dur: 1, col: "bg-emerald-400", pri: "low" as Priority, st: "todo" as Status, ck: "cal.mock.cat.health", tgs: ["cal.mock.tag.exercise","cal.mock.tag.morning"], el: "medium" as const },
+  { id: "14", tk: "cal.mock.14", d: 0, sh: 22.5, dur: 0.5, col: "bg-indigo-400", pri: "low" as Priority, st: "todo" as Status, ck: "cal.mock.cat.personal", tgs: ["cal.mock.tag.reflect"], el: "low" as const },
 ];
 
-const priorityConfig: Record<Priority, { label: string; color: string; icon: typeof Flag }> = {
-  urgent: { label: "紧急", color: "text-red-600 bg-red-50 border-red-200", icon: AlertTriangle },
-  high: { label: "高", color: "text-orange-600 bg-orange-50 border-orange-200", icon: Flag },
-  medium: { label: "中", color: "text-blue-600 bg-blue-50 border-blue-200", icon: Flag },
-  low: { label: "低", color: "text-gray-500 bg-gray-50 border-gray-200", icon: Flag },
-};
+function buildMockEvents(t: (k: string) => string): ScheduleEvent[] {
+  return _mockTpl.map((m) => ({
+    id: m.id, title: t(m.tk), date: m.d === 0 ? today : addDays(today, m.d), startHour: m.sh, duration: m.dur,
+    color: m.col, priority: m.pri, status: m.st, category: t(m.ck), tags: m.tgs.map((k) => t(k)),
+    ...(m.lk ? { location: t(m.lk) } : {}), ...(m.meet ? { hasMeeting: true } : {}), ...(m.rec ? { isRecurring: true } : {}),
+    ...(m.el ? { energyLevel: m.el } : {}), ...(m.aiSuggested ? { aiSuggested: true } : {}),
+    ...(m.subs ? { subtasks: m.subs.map((s) => ({ id: s.id, text: t(s.tk), done: s.done })) } : {}),
+  }));
+}
 
-const statusConfig: Record<Status, { label: string; color: string }> = {
-  todo: { label: "待办", color: "bg-gray-100 text-gray-600" },
-  in_progress: { label: "进行中", color: "bg-blue-100 text-blue-700" },
-  done: { label: "已完成", color: "bg-emerald-100 text-emerald-700" },
-  blocked: { label: "阻塞", color: "bg-red-100 text-red-700" },
-};
+function buildPriorityConfig(t: (k: string) => string): Record<Priority, { label: string; color: string; icon: typeof Flag }> {
+  return {
+    urgent: { label: t("cal.priority.urgent"), color: "text-red-600 bg-red-50 border-red-200", icon: AlertTriangle },
+    high: { label: t("cal.priority.high"), color: "text-orange-600 bg-orange-50 border-orange-200", icon: Flag },
+    medium: { label: t("cal.priority.medium"), color: "text-blue-600 bg-blue-50 border-blue-200", icon: Flag },
+    low: { label: t("cal.priority.low"), color: "text-gray-500 bg-gray-50 border-gray-200", icon: Flag },
+  };
+}
+
+function buildStatusConfig(t: (k: string) => string): Record<Status, { label: string; color: string }> {
+  return {
+    todo: { label: t("cal.status.todo"), color: "bg-gray-100 text-gray-600" },
+    in_progress: { label: t("cal.status.inProgress"), color: "bg-blue-100 text-blue-700" },
+    done: { label: t("cal.status.done"), color: "bg-emerald-100 text-emerald-700" },
+    blocked: { label: t("cal.status.blocked"), color: "bg-red-100 text-red-700" },
+  };
+}
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0:00 – 23:00
 
@@ -210,6 +160,11 @@ const mockDependencies: [string, string][] = [
 ];
 
 function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubleClickSlot }: TimelineViewProps) {
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en-US";
+  const fnsLocale = isEn ? enUSDateFns : zhCN;
+  const priorityConfig = buildPriorityConfig(t);
+  const statusConfig = buildStatusConfig(t);
   const [zoom, setZoom] = useState<TimelineZoom>("week");
   const [hoveredEvent, setHoveredEvent] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -255,14 +210,14 @@ function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubl
     return map;
   }, [events, visibleDays]);
 
-  const categoryOrder = ["工作", "会议", "开发", "设计", "健康", "学习"];
+  const categoryOrder = [t("cal.mock.cat.work"), t("cal.mock.cat.meeting"), t("cal.mock.cat.dev"), t("cal.mock.cat.design"), t("cal.mock.cat.health"), t("cal.mock.cat.learning")];
   const sortedCategories = [...categorized.keys()].sort(
     (a, b) => (categoryOrder.indexOf(a) === -1 ? 99 : categoryOrder.indexOf(a)) - (categoryOrder.indexOf(b) === -1 ? 99 : categoryOrder.indexOf(b))
   );
 
   const categoryColors: Record<string, string> = {
-    "工作": "bg-blue-500", "会议": "bg-purple-500", "开发": "bg-cyan-500",
-    "设计": "bg-pink-500", "健康": "bg-emerald-500", "学习": "bg-rose-400",
+    [t("cal.mock.cat.work")]: "bg-blue-500", [t("cal.mock.cat.meeting")]: "bg-purple-500", [t("cal.mock.cat.dev")]: "bg-cyan-500",
+    [t("cal.mock.cat.design")]: "bg-pink-500", [t("cal.mock.cat.health")]: "bg-emerald-500", [t("cal.mock.cat.learning")]: "bg-rose-400",
   };
 
   const toggleGroup = (cat: string) => {
@@ -329,19 +284,19 @@ function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubl
       className="flex flex-col h-full"
     >
       {/* Toolbar */}
-      <div className="shrink-0 flex items-center justify-between gap-2 px-4 py-2.5 sm:px-6 border-b border-border/30 bg-white/60 backdrop-blur-sm flex-wrap">
+      <div className="shrink-0 flex items-center justify-between gap-2 px-4 py-2.5 sm:px-6 border-b border-border/30 bg-card/60 backdrop-blur-sm flex-wrap">
         <div className="flex items-center gap-2">
           <div className="flex gap-0.5 rounded-lg bg-muted/40 p-0.5">
             {([
-              { key: "day" as TimelineZoom, label: "日" },
-              { key: "3day" as TimelineZoom, label: "3日" },
-              { key: "week" as TimelineZoom, label: "周" },
+              { key: "day" as TimelineZoom, label: t("cal.dayView") },
+              { key: "3day" as TimelineZoom, label: t("cal.3dayView") },
+              { key: "week" as TimelineZoom, label: t("cal.weekView") },
             ]).map((z) => (
               <button
                 key={z.key}
                 onClick={() => setZoom(z.key)}
                 className={`rounded-md px-2.5 py-1 text-[0.6875rem] transition-all ${
-                  zoom === z.key ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  zoom === z.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                 }`}
                 style={{ fontWeight: zoom === z.key ? 600 : 400 }}
               >
@@ -359,7 +314,7 @@ function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubl
             style={{ fontWeight: 500 }}
           >
             <Target className="h-3 w-3" />
-            今天
+            {t("cal.today")}
           </button>
         </div>
         <div className="flex items-center gap-2">
@@ -371,12 +326,12 @@ function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubl
             style={{ fontWeight: 500 }}
           >
             <Link2 className="h-3 w-3" />
-            依赖
+            {t("cal.deps")}
           </button>
           <div className="hidden sm:flex items-center gap-3 text-[0.6875rem] text-muted-foreground">
-            <span>{events.filter((e) => visibleDays.some((d) => isSameDay(d, e.date))).length} 个日程</span>
+            <span>{t("cal.nEvents").replace("{n}", String(events.filter((e) => visibleDays.some((d) => isSameDay(d, e.date))).length))}</span>
             <span>·</span>
-            <span>{events.filter((e) => visibleDays.some((d) => isSameDay(d, e.date)) && e.status === "done").length} 已完成</span>
+            <span>{t("cal.nDone").replace("{n}", String(events.filter((e) => visibleDays.some((d) => isSameDay(d, e.date)) && e.status === "done").length))}</span>
           </div>
         </div>
       </div>
@@ -384,9 +339,9 @@ function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubl
       {/* Main content */}
       <div className="flex-1 overflow-hidden flex">
         {/* Left labels */}
-        <div className="shrink-0 border-r border-border/40 bg-white" style={{ width: labelWidth }}>
+        <div className="shrink-0 border-r border-border/40 bg-card" style={{ width: labelWidth }}>
           <div className="h-[60px] border-b border-border/40 px-3 flex items-end pb-1.5">
-            <span className="text-[0.625rem] text-muted-foreground/50">分类 / 任务</span>
+            <span className="text-[0.625rem] text-muted-foreground/50">{t("cal.catTask")}</span>
           </div>
           <div className="overflow-y-auto" style={{ maxHeight: "calc(100% - 60px)" }}>
             {sortedCategories.map((cat) => {
@@ -457,14 +412,14 @@ function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubl
         <div ref={scrollRef} className="flex-1 overflow-x-auto overflow-y-auto">
           <div style={{ width: totalWidth, minHeight: "100%" }} className="relative">
             {/* Time header */}
-            <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-border/40" style={{ height: 60 }}>
+            <div className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm border-b border-border/40" style={{ height: 60 }}>
               <div className="flex h-[28px] border-b border-border/20">
                 {visibleDays.map((day) => {
                   const dayW = totalHours * hourWidthPx;
                   const td = isToday(day);
                   return (
                     <div key={day.toISOString()} className={`shrink-0 flex items-center justify-center text-[0.6875rem] border-r border-border/20 ${td ? "bg-primary/5 text-primary" : "text-muted-foreground"}`} style={{ width: dayW, fontWeight: td ? 600 : 400 }}>
-                      {format(day, "M月d日 EEE", { locale: zhCN })}
+                      {format(day, isEn ? "MMM d, EEE" : "M月d日 EEE", { locale: fnsLocale })}
                     </div>
                   );
                 })}
@@ -584,7 +539,7 @@ function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubl
                                 initial={{ opacity: 0, y: 4 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 4 }}
-                                className="absolute z-30 top-full mt-1 rounded-lg border border-border/50 bg-white px-3 py-2 shadow-lg pointer-events-none whitespace-nowrap"
+                                className="absolute z-30 top-full mt-1 rounded-lg border border-border/50 bg-card px-3 py-2 shadow-lg pointer-events-none whitespace-nowrap"
                                 style={{ left: Math.min(barStyle.left, totalWidth - 260) }}
                               >
                                 <div className="flex items-center gap-2 mb-1">
@@ -596,7 +551,7 @@ function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubl
                                   <span>📂 {event.category}</span>
                                   <span>⏱ {event.duration}h</span>
                                   {event.location && <span>📍 {event.location}</span>}
-                                  {event.subtasks && <span>✅ {event.subtasks.filter((s) => s.done).length}/{event.subtasks.length} 子任务</span>}
+                                  {event.subtasks && <span>✅ {event.subtasks.filter((s) => s.done).length}/{event.subtasks.length} {t("cal.subtasks")}</span>}
                                 </div>
                                 <div className="flex items-center gap-1.5 mt-1">
                                   <Badge className={`${statusConfig[event.status].color} text-[0.5rem] h-3.5 px-1 hover:${statusConfig[event.status].color}`}>{statusConfig[event.status].label}</Badge>
@@ -653,7 +608,7 @@ function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubl
       </div>
 
       {/* Bottom legend */}
-      <div className="shrink-0 border-t border-border/30 bg-white/80 backdrop-blur-sm px-4 py-2 sm:px-6 flex items-center justify-between flex-wrap gap-2">
+      <div className="shrink-0 border-t border-border/30 bg-card/80 backdrop-blur-sm px-4 py-2 sm:px-6 flex items-center justify-between flex-wrap gap-2">
         <div className="flex flex-wrap gap-3">
           {sortedCategories.map((cat) => {
             const catColor = categoryColors[cat] || "bg-gray-400";
@@ -669,17 +624,17 @@ function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubl
         <div className="flex items-center gap-3 text-[0.625rem] text-muted-foreground/60">
           <div className="flex items-center gap-1">
             <div className="w-4 h-[2px] bg-red-500/70 rounded" />
-            <span>当前时刻</span>
+            <span>{isEn ? "Now" : "当前时刻"}</span>
           </div>
           {showDeps && (
             <div className="flex items-center gap-1">
               <div className="w-4 h-[1.5px] border-t-[1.5px] border-dashed border-primary/30" />
-              <span>依赖关系</span>
+              <span>{t("cal.deps")}</span>
             </div>
           )}
           <div className="flex items-center gap-1">
             <div className="h-2 w-4 rounded-sm bg-white/20 border border-muted-foreground/20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)" }} />
-            <span>阻塞</span>
+            <span>{t("cal.status.blocked")}</span>
           </div>
         </div>
       </div>
@@ -689,14 +644,19 @@ function TimelineView({ events, weekDays, onSelectEvent, onToggleStatus, onDoubl
 
 /* ═══════════════ Component ═══════════════ */
 export function CalendarPage() {
+  const { t, locale, dateLocale } = useLanguage();
+  const isEn = locale === "en-US";
+  const fnsLocale = isEn ? enUSDateFns : zhCN;
   const [view, setView] = useState<ViewType>("calendar");
   const [currentDate, setCurrentDate] = useState(today);
-  const [events, setEvents] = useState<ScheduleEvent[]>(mockEvents);
+  const priorityConfig = buildPriorityConfig(t);
+  const statusConfig = buildStatusConfig(t);
+  const [events, setEvents] = useState<ScheduleEvent[]>(() => buildMockEvents(t));
   // focusMode removed — now at /focus
   const [showAI, setShowAI] = useState(false);
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState<{ role: "ai" | "user"; text: string }[]>([
-    { role: "ai", text: "你好！我可以帮你智能安排日程。试试输入「明天下午三点开会」或「帮我找一个两小时的空闲时段做深度工作」。" },
+    { role: "ai", text: isEn ? "Hi! I can help you schedule smartly. Try typing \"meeting at 3pm tomorrow\" or \"find a 2-hour free slot for deep work\"." : "你好！我可以帮你智能安排日程。试试输入「明天下午三点开会」或「帮我找一个两小时的空闲时段做深度工作」。" },
   ]);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [addEventPreset, setAddEventPreset] = useState<AddEventPreset | null>(null);
@@ -770,7 +730,7 @@ export function CalendarPage() {
         color: e.color,
         priority: "medium" as Priority,
         status: "todo" as Status,
-        category: e.sourceType === "google" ? "Google" : e.sourceType === "apple" ? "iCloud" : e.sourceType === "outlook" ? "Outlook" : "外部",
+        category: e.sourceType === "google" ? "Google" : e.sourceType === "apple" ? "iCloud" : e.sourceType === "outlook" ? "Outlook" : (isEn ? "External" : "外部"),
         tags: [e.sourceType],
         location: e.location,
         hasMeeting: !!e.attendees?.length,
@@ -790,14 +750,22 @@ export function CalendarPage() {
 
     setTimeout(() => {
       let response = "";
-      if (userMsg.includes("会") || userMsg.includes("开会")) {
-        response = "已为你创建日程：\n📅 明天 15:00 – 16:00\n📋 「团队会议」\n🏷️ 优先级：中 | 分类：会议\n\n已自动检查时间冲突，该时段空闲可用。是否需要发送会议邀请？";
-      } else if (userMsg.includes("空闲") || userMsg.includes("深度工作")) {
-        response = "分析了你本周的日程后，我推荐以下深度工作时段：\n\n🟢 明天 09:00-11:00（精力高峰期）\n🟡 后天 14:00-16:00（无会议冲突）\n🟢 周五 09:00-12:00（完整的上午时段）\n\n建议选择明天上午的时段，这是你历史效率最高的时间段。需要我自动排入吗？";
-      } else if (userMsg.includes("优化") || userMsg.includes("建议")) {
-        response = "根据你的效率模式分析：\n\n⚡ 建议将「产品文档」移到上午 9-11 点（你的高效时段）\n☕ 下午 2-3 点适合安排轻量级会议\n🧠 「代码审查」建议放在午后，避免与深度工作冲突\n📊 本周工作负荷略高，建议将「周报」推迟到周五下午\n\n要我自动应用这些调整吗？";
+      if (userMsg.includes("会") || userMsg.includes("开会") || userMsg.includes("meeting")) {
+        response = isEn
+          ? "Event created:\n📅 Tomorrow 15:00 – 16:00\n📋 \"Team Meeting\"\n🏷️ Priority: Med | Category: Meeting\n\nNo time conflicts detected. Need to send invites?"
+          : "已为你创建日程：\n📅 明天 15:00 – 16:00\n📋 「团队会议」\n🏷️ 优先级：中 | 分类：会议\n\n已自动检查时间冲突，该时段空闲可用。是否需要发送会议邀请？";
+      } else if (userMsg.includes("空闲") || userMsg.includes("深度工作") || userMsg.includes("free") || userMsg.includes("deep work")) {
+        response = isEn
+          ? "After analyzing your schedule, I recommend these deep work slots:\n\n🟢 Tomorrow 09:00-11:00 (peak energy)\n🟡 Day after 14:00-16:00 (no meeting conflicts)\n🟢 Friday 09:00-12:00 (full morning)\n\nI suggest tomorrow morning — it's historically your most productive slot. Shall I schedule it?"
+          : "分析了你本周的日程后，我推荐以下深度工作时段：\n\n🟢 明天 09:00-11:00（精力高峰期）\n🟡 后天 14:00-16:00（无会议冲突）\n🟢 周五 09:00-12:00（完整的上午时段）\n\n建议选择明天上午的时段，这是你历史效率最高的时间段。需要我自动排入吗？";
+      } else if (userMsg.includes("优化") || userMsg.includes("建议") || userMsg.includes("optimize") || userMsg.includes("suggest")) {
+        response = isEn
+          ? "Based on your efficiency patterns:\n\n⚡ Move \"Product Docs\" to 9-11 AM (your peak hours)\n☕ Schedule lightweight meetings at 2-3 PM\n🧠 \"Code Review\" works best in early afternoon\n📊 Workload is high this week — consider moving \"Weekly Report\" to Friday PM\n\nShall I apply these changes?"
+          : "根据你的效率模式分析：\n\n⚡ 建议将「产品文档」移到上午 9-11 点（你的高效时段）\n☕ 下午 2-3 点适合安排轻量级会议\n🧠 「代码审查」建议放在午后，避免与深度工作冲突\n📊 本周工作负荷略高，建议将「周报」推迟到周五下午\n\n要我自动应用这些调整吗？";
       } else {
-        response = "收到！让我分析一下你的日程...\n\n基于你当前的任务分布和精力曲线，我建议：\n1. 高能耗任务安排在上午 9-12 点\n2. 会议集中在下午 2-4 点\n3. 保留每天至少 1 小时的缓冲时间\n\n需要我帮你具体调整哪些日程？";
+        response = isEn
+          ? "Got it! Let me analyze your schedule...\n\nBased on your tasks and energy curve, I suggest:\n1. High-energy tasks in the morning 9-12\n2. Meetings concentrated at 2-4 PM\n3. Keep at least 1 hour buffer daily\n\nWhich events would you like me to adjust?"
+          : "收到！让我分析一下你的日程...\n\n基于你当前的任务分布和精力曲线，我建议：\n1. 高能耗任务安排在上午 9-12 点\n2. 会议集中在下午 2-4 点\n3. 保留每天至少 1 小时的缓冲时间\n\n需要我帮你具体调整哪些日程？";
       }
       setAiMessages((prev) => [...prev, { role: "ai", text: response }]);
     }, 800);
@@ -864,16 +832,16 @@ export function CalendarPage() {
   };
 
   const views = [
-    { key: "calendar" as ViewType, label: "日历", icon: CalendarDays },
-    { key: "list" as ViewType, label: "列表", icon: List },
-    { key: "kanban" as ViewType, label: "看板", icon: Columns3 },
-    { key: "timeline" as ViewType, label: "时间线", icon: GanttChart },
+    { key: "calendar" as ViewType, label: t("cal.view.calendar"), icon: CalendarDays },
+    { key: "list" as ViewType, label: t("cal.view.list"), icon: List },
+    { key: "kanban" as ViewType, label: t("cal.view.kanban"), icon: Columns3 },
+    { key: "timeline" as ViewType, label: t("cal.view.timeline"), icon: GanttChart },
   ];
 
   return (
     <div className="flex h-full flex-col bg-background">
       {/* ───── Top Bar ───── */}
-      <div className="relative z-40 shrink-0 border-b border-border/50 bg-white/80 backdrop-blur-sm px-3 py-2.5 sm:px-6 sm:py-3">
+      <div className="relative z-40 shrink-0 border-b border-border/50 bg-card/80 backdrop-blur-sm px-3 py-2.5 sm:px-6 sm:py-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar">
             {/* View switcher */}
@@ -908,7 +876,7 @@ export function CalendarPage() {
                 className="rounded-lg px-2 sm:px-3 py-1 text-[0.75rem] sm:text-[0.8125rem] text-muted-foreground hover:bg-muted/60 transition-colors"
                 style={{ fontWeight: 500 }}
               >
-                今天
+                {t("cal.today")}
               </button>
               <button
                 onClick={() => navigateWeek(1)}
@@ -917,7 +885,7 @@ export function CalendarPage() {
                 <ChevronRight className="h-4 w-4" />
               </button>
               <span className="text-[0.75rem] sm:text-[0.9375rem] ml-1 whitespace-nowrap" style={{ fontWeight: 600 }}>
-                {format(weekStart, "M月d日", { locale: zhCN })} – {format(addDays(weekStart, 6), "M月d日", { locale: zhCN })}
+                {format(weekStart, isEn ? "MMM d" : "M月d日", { locale: fnsLocale })} – {format(addDays(weekStart, 6), isEn ? "MMM d" : "M月d日", { locale: fnsLocale })}
               </span>
             </div>
           </div>
@@ -935,7 +903,7 @@ export function CalendarPage() {
                 style={{ fontWeight: showToolsMenu ? 600 : 400 }}
               >
                 <Wrench className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">工具</span>
+                <span className="hidden sm:inline">{t("cal.tools")}</span>
                 {externalEvents.length > 0 && (
                   <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 text-white text-[0.5625rem] px-1" style={{ fontWeight: 600 }}>
                     {externalEvents.length}
@@ -964,8 +932,8 @@ export function CalendarPage() {
                         <Brain className={`h-3.5 w-3.5 ${showAI ? "text-primary" : "text-muted-foreground"}`} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div style={{ fontWeight: 500 }}>AI 智能排期</div>
-                        <div className="text-[0.6875rem] text-muted-foreground">自然语言创建与优化日程</div>
+                        <div style={{ fontWeight: 500 }}>{isEn ? "AI Smart Scheduling" : "AI 智能排期"}</div>
+                        <div className="text-[0.6875rem] text-muted-foreground">{isEn ? "Natural language scheduling" : "自然语言创建与优化日程"}</div>
                       </div>
                       {showAI && <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />}
                     </button>
@@ -979,8 +947,8 @@ export function CalendarPage() {
                         <Mail className="h-3.5 w-3.5 text-blue-600" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div style={{ fontWeight: 500 }}>邮件智能聚合</div>
-                        <div className="text-[0.6875rem] text-muted-foreground">扫描行程单、邀请函、账单</div>
+                        <div style={{ fontWeight: 500 }}>{t("emailAgg.title")}</div>
+                        <div className="text-[0.6875rem] text-muted-foreground">{isEn ? "Scan itineraries, invites, bills" : "扫描行程单、邀请函、账单"}</div>
                       </div>
                     </button>
 
@@ -994,12 +962,12 @@ export function CalendarPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5" style={{ fontWeight: 500 }}>
-                          会议辅助
+                          {t("meetingAssist.title")}
                           <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-px text-[0.5625rem] text-amber-700">
                             <Crown className="h-2 w-2" /> Pro
                           </span>
                         </div>
-                        <div className="text-[0.6875rem] text-muted-foreground">录音摘要、自动提取任务</div>
+                        <div className="text-[0.6875rem] text-muted-foreground">{isEn ? "Recording summaries, extract tasks" : "录音摘要、自动提取任务"}</div>
                       </div>
                     </button>
 
@@ -1014,8 +982,8 @@ export function CalendarPage() {
                         <Link2 className={`h-3.5 w-3.5 ${externalEvents.length > 0 ? "text-emerald-600" : "text-muted-foreground"}`} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div style={{ fontWeight: 500 }}>跨平台日历聚合</div>
-                        <div className="text-[0.6875rem] text-muted-foreground">双向同步 · 冲突检测</div>
+                        <div style={{ fontWeight: 500 }}>{t("calSync.title")}</div>
+                        <div className="text-[0.6875rem] text-muted-foreground">{isEn ? "Bi-directional sync · Conflict detection" : "双向同步 · 冲突检测"}</div>
                       </div>
                       {externalEvents.length > 0 && (
                         <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 text-white text-[0.5625rem] px-1 shrink-0" style={{ fontWeight: 600 }}>
@@ -1034,7 +1002,7 @@ export function CalendarPage() {
               size="sm"
               className="rounded-xl bg-primary text-white hover:bg-primary/90 text-[0.75rem] sm:text-[0.8125rem]"
             >
-              <Plus className="h-3.5 w-3.5 sm:mr-1" /> <span className="hidden sm:inline">新建日程</span>
+              <Plus className="h-3.5 w-3.5 sm:mr-1" /> <span className="hidden sm:inline">{t("cal.addEvent")}</span>
             </Button>
           </div>
         </div>
@@ -1076,7 +1044,7 @@ export function CalendarPage() {
                 <div className="overflow-x-auto min-w-0 flex flex-col flex-1">
                 <div className="min-w-[700px] flex flex-col flex-1">
                 {/* Week header */}
-                <div className="sticky top-0 z-20 grid grid-cols-[48px_repeat(7,1fr)] sm:grid-cols-[60px_repeat(7,1fr)] border-b border-border/40 bg-white/95 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+                <div className="sticky top-0 z-20 grid grid-cols-[48px_repeat(7,1fr)] sm:grid-cols-[60px_repeat(7,1fr)] border-b border-border/40 bg-card/95 backdrop-blur-md shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
                   <div className="border-r border-border/20 flex items-end justify-center pb-2">
                     <span className="text-[0.625rem] text-muted-foreground/50 uppercase tracking-wider">GMT+8</span>
                   </div>
@@ -1089,7 +1057,7 @@ export function CalendarPage() {
                         className={`border-r border-border/20 px-2 py-3 text-center transition-colors ${isT ? "bg-primary/[0.04]" : ""}`}
                       >
                         <div className={`text-[0.6875rem] uppercase tracking-wide ${isT ? "text-primary" : "text-muted-foreground/70"}`}>
-                          {format(day, "EEE", { locale: zhCN })}
+                          {format(day, "EEE", { locale: fnsLocale })}
                         </div>
                         <div
                           className={`mx-auto mt-1 flex h-9 w-9 items-center justify-center rounded-full text-[0.9375rem] transition-all ${
@@ -1226,7 +1194,7 @@ export function CalendarPage() {
                       />
                       {/* Time label */}
                       <div
-                        className="absolute -translate-y-1/2 text-[0.5625rem] text-red-500 bg-white/90 px-1 py-0.5 rounded"
+                        className="absolute -translate-y-1/2 text-[0.5625rem] text-red-500 bg-card/90 px-1 py-0.5 rounded"
                         style={{ fontWeight: 600, left: 4 }}
                       >
                         {format(nowDate, "HH:mm")}
@@ -1267,15 +1235,15 @@ export function CalendarPage() {
                           style={{ fontWeight: 600 }}
                         >
                           {isToday(day)
-                            ? "今天"
-                            : format(day, "M月d日 EEEE", { locale: zhCN })}
+                            ? t("cal.today")
+                            : format(day, isEn ? "MMM d, EEEE" : "M月d日 EEEE", { locale: fnsLocale })}
                         </div>
                         <Badge variant="secondary" className="text-[0.6875rem]">
-                          {dayEvents.length} 项
+                          {dayEvents.length} {isEn ? "events" : "项日程"}
                         </Badge>
                         {isToday(day) && (
                           <span className="text-[0.75rem] text-muted-foreground">
-                            · {format(day, "M月d日 EEEE", { locale: zhCN })}
+                            · {format(day, isEn ? "MMM d, EEEE" : "M月d日 EEEE", { locale: fnsLocale })}
                           </span>
                         )}
                       </div>
@@ -1352,12 +1320,12 @@ export function CalendarPage() {
                                   )}
                                   {event.isRecurring && (
                                     <span className="flex items-center gap-1">
-                                      <Repeat className="h-3 w-3" /> 重复
+                                      <Repeat className="h-3 w-3" /> {t("cal.recurring")}
                                     </span>
                                   )}
                                   {event.hasMeeting && (
                                     <span className="flex items-center gap-1">
-                                      <Video className="h-3 w-3" /> 视频会议
+                                      <Video className="h-3 w-3" /> {isEn ? "Video Meeting" : "视频会议/线上"}
                                     </span>
                                   )}
                                 </div>
@@ -1411,10 +1379,10 @@ export function CalendarPage() {
                                     style={{ fontWeight: 500 }}
                                   >
                                     {event.energyLevel === "high"
-                                      ? "⚡ 高能耗"
+                                      ? (isEn ? "⚡ High Energy" : "⚡ 高能耗")
                                       : event.energyLevel === "medium"
-                                      ? "💪 中等"
-                                      : "🌿 低能耗"}
+                                      ? (isEn ? "💪 Medium" : "💪 中等")
+                                      : (isEn ? "🌿 Low Energy" : "🌿 低能耗")}
                                   </div>
                                 </div>
                               )}
@@ -1569,7 +1537,7 @@ export function CalendarPage() {
               <div className="flex h-12 items-center justify-between border-b border-border/50 px-4">
                 <div className="flex items-center gap-2">
                   <Brain className="h-4 w-4 text-primary" />
-                  <span className="text-[0.875rem]" style={{ fontWeight: 600 }}>AI 智能排期</span>
+                  <span className="text-[0.875rem]" style={{ fontWeight: 600 }}>{isEn ? "AI Smart Scheduling" : "AI 智能排期"}</span>
                 </div>
                 <button
                   onClick={() => setShowAI(false)}
@@ -1582,15 +1550,15 @@ export function CalendarPage() {
               {/* Productivity stats */}
               <div className="border-b border-border/30 p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[0.8125rem]" style={{ fontWeight: 500 }}>今日进度</span>
+                  <span className="text-[0.8125rem]" style={{ fontWeight: 500 }}>{t("dashboard.progress")}</span>
                   <span className="text-[0.8125rem] text-primary" style={{ fontWeight: 600 }}>{todayProgress}%</span>
                 </div>
                 <Progress value={todayProgress} className="h-2" />
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { label: "待办", value: todayEvents.filter((e) => e.status === "todo").length, icon: Target, color: "text-blue-600 bg-blue-50" },
-                    { label: "进行中", value: todayEvents.filter((e) => e.status === "in_progress").length, icon: Flame, color: "text-amber-600 bg-amber-50" },
-                    { label: "已完成", value: completedToday, icon: CircleCheck, color: "text-emerald-600 bg-emerald-50" },
+                    { label: t("cal.status.todo"), value: todayEvents.filter((e) => e.status === "todo").length, icon: Target, color: "text-blue-600 bg-blue-50" },
+                    { label: t("cal.status.inProgress"), value: todayEvents.filter((e) => e.status === "in_progress").length, icon: Flame, color: "text-amber-600 bg-amber-50" },
+                    { label: t("cal.status.done"), value: completedToday, icon: CircleCheck, color: "text-emerald-600 bg-emerald-50" },
                   ].map((s) => (
                     <div key={s.label} className={`rounded-lg p-2 text-center ${s.color.split(" ")[1]}`}>
                       <div className={`text-[1rem] ${s.color.split(" ")[0]}`} style={{ fontWeight: 700 }}>{s.value}</div>
@@ -1601,7 +1569,7 @@ export function CalendarPage() {
 
                 {/* Energy curve */}
                 <div>
-                  <div className="text-[0.75rem] text-muted-foreground mb-1.5" style={{ fontWeight: 500 }}>精力曲线</div>
+                  <div className="text-[0.75rem] text-muted-foreground mb-1.5" style={{ fontWeight: 500 }}>{isEn ? "Energy Curve" : "精力曲线"}</div>
                   <div className="flex items-end gap-1 h-10">
                     {[40, 70, 95, 100, 85, 60, 75, 90, 70, 45, 30, 20].map((v, i) => (
                       <motion.div
@@ -1651,7 +1619,7 @@ export function CalendarPage() {
               {/* AI input */}
               <div className="shrink-0 border-t border-border/50 p-3">
                 <div className="mb-2 flex flex-wrap gap-1">
-                  {["优化今日日程", "找空闲时段", "分析工作负荷"].map((q) => (
+                  {(isEn ? ["Optimize today", "Find free slots", "Analyze workload"] : ["优化今日日程", "找空闲时段", "分析工作负荷"]).map((q, qi) => (
                     <button
                       key={q}
                       onClick={() => setAiInput(q)}
@@ -1666,7 +1634,7 @@ export function CalendarPage() {
                     value={aiInput}
                     onChange={(e) => setAiInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleAISend()}
-                    placeholder="输入自然语言..."
+                    placeholder={isEn ? "Type in natural language..." : "输入自然语言..."}
                     className="rounded-xl text-[0.75rem]"
                   />
                   <Button
@@ -1707,7 +1675,7 @@ export function CalendarPage() {
                   <h2 className="text-[1.125rem]" style={{ fontWeight: 600 }}>{selectedEvent.title}</h2>
                   {selectedEvent.aiSuggested && (
                     <Badge className="bg-primary/10 text-primary text-[0.625rem]">
-                      <Sparkles className="mr-0.5 h-2.5 w-2.5" /> AI 建议
+                      <Sparkles className="mr-0.5 h-2.5 w-2.5" /> {t("cal.aiSuggested")}
                     </Badge>
                   )}
                 </div>
@@ -1722,12 +1690,12 @@ export function CalendarPage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-[0.875rem] text-muted-foreground">
                   <CalendarDays className="h-4 w-4" />
-                  {format(selectedEvent.date, "yyyy年M月d日 EEEE", { locale: zhCN })}
+                  {format(selectedEvent.date, isEn ? "EEEE, MMM d, yyyy" : "yyyy年M月d日 EEEE", { locale: fnsLocale })}
                 </div>
                 <div className="flex items-center gap-3 text-[0.875rem] text-muted-foreground">
                   <Clock className="h-4 w-4" />
                   {Math.floor(selectedEvent.startHour)}:{(selectedEvent.startHour % 1) * 60 === 0 ? "00" : "30"} – {Math.floor(selectedEvent.startHour + selectedEvent.duration)}:{((selectedEvent.startHour + selectedEvent.duration) % 1) * 60 === 0 ? "00" : "30"}
-                  <span>({selectedEvent.duration}小时)</span>
+                  <span>({selectedEvent.duration}{isEn ? "h" : "小时"})</span>
                 </div>
                 {selectedEvent.location && (
                   <div className="flex items-center gap-3 text-[0.875rem] text-muted-foreground">
@@ -1737,7 +1705,7 @@ export function CalendarPage() {
 
                 <div className="flex items-center gap-2 pt-1">
                   <Badge variant="outline" className={`text-[0.6875rem] ${priorityConfig[selectedEvent.priority].color}`}>
-                    {priorityConfig[selectedEvent.priority].label}优先级
+                    {priorityConfig[selectedEvent.priority].label} {isEn ? "Priority" : "优先级"}
                   </Badge>
                   <Badge className={`text-[0.6875rem] ${statusConfig[selectedEvent.status].color}`}>
                     {statusConfig[selectedEvent.status].label}
@@ -1755,7 +1723,7 @@ export function CalendarPage() {
 
                 {selectedEvent.subtasks && selectedEvent.subtasks.length > 0 && (
                   <div className="pt-2 border-t border-border/30">
-                    <div className="text-[0.8125rem] mb-2" style={{ fontWeight: 600 }}>子任务</div>
+                    <div className="text-[0.8125rem] mb-2" style={{ fontWeight: 600 }}>{t("cal.subtasks")}</div>
                     <div className="space-y-1.5">
                       {selectedEvent.subtasks.map((st) => (
                         <button
@@ -1782,9 +1750,9 @@ export function CalendarPage() {
                 {selectedEvent.energyLevel && (
                   <div className="flex items-center gap-2 pt-1 text-[0.8125rem] text-muted-foreground">
                     <Zap className="h-4 w-4" />
-                    精力消耗：
+                    {isEn ? "Energy:" : "精力消耗："}
                     <span style={{ fontWeight: 500 }}>
-                      {selectedEvent.energyLevel === "high" ? "⚡ 高" : selectedEvent.energyLevel === "medium" ? "💪 中" : "🌿 低"}
+                      {selectedEvent.energyLevel === "high" ? (isEn ? "⚡ High" : "⚡ 高") : selectedEvent.energyLevel === "medium" ? (isEn ? "💪 Med" : "💪 中") : (isEn ? "🌿 Low" : "🌿 低")}
                     </span>
                   </div>
                 )}
@@ -1798,10 +1766,10 @@ export function CalendarPage() {
                   }}
                   className="flex-1 rounded-xl bg-primary text-white hover:bg-primary/90"
                 >
-                  {selectedEvent.status === "done" ? "标记未完成" : "标记完成"}
+                  {selectedEvent.status === "done" ? (isEn ? "Mark Incomplete" : "标记未完成") : (isEn ? "Mark Complete" : "标记完成")}
                 </Button>
                 <Button variant="outline" className="rounded-xl" onClick={() => setSelectedEvent(null)}>
-                  关闭
+                  {t("common.close")}
                 </Button>
               </div>
             </motion.div>

@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { Button } from "./ui/button";
 import { useAuth } from "./AuthContext";
+import { useLanguage } from "./LanguageContext";
 import { Sparkles, Menu, X, LogOut, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -9,7 +10,39 @@ export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [activeHash, setActiveHash] = useState("");
+
+  useEffect(() => {
+    setActiveHash(window.location.hash);
+    const onHashChange = () => setActiveHash(window.location.hash);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, [location]);
+
+  const isActive = (path: string, hash?: string) => {
+    if (hash) {
+      return location.pathname === "/" && activeHash === hash;
+    }
+    return location.pathname === path && !activeHash;
+  };
+
+  const scrollToHash = (hash: string) => {
+    setActiveHash(hash);
+    if (location.pathname === "/") {
+      // Already on landing page, just scroll
+      const el = document.querySelector(hash);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    } else {
+      // Navigate to landing page first, then scroll after render
+      navigate("/");
+      setTimeout(() => {
+        const el = document.querySelector(hash);
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -18,7 +51,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-white/70 backdrop-blur-xl">
+    <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-card/70 backdrop-blur-xl">
       <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo - left */}
         <Link to="/" className="flex items-center gap-2">
@@ -32,24 +65,20 @@ export function Navbar() {
 
         {/* Desktop Nav - absolutely centered */}
         <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-1 md:flex">
-          <Link to="/">
-            <Button variant={location.pathname === "/" ? "secondary" : "ghost"} size="sm">
-              首页
+          <Link to="/" onClick={() => setActiveHash("")}>
+            <Button variant={isActive("/") ? "secondary" : "ghost"} size="sm">
+              {t("nav.home")}
             </Button>
           </Link>
-          <a href="/#features">
-            <Button variant="ghost" size="sm">
-              功能
-            </Button>
-          </a>
-          <a href="/#how-it-works">
-            <Button variant="ghost" size="sm">
-              使用流程
-            </Button>
-          </a>
-          <Link to="/pricing">
-            <Button variant={location.pathname === "/pricing" ? "secondary" : "ghost"} size="sm">
-              定价
+          <Button variant={isActive("/", "#features") ? "secondary" : "ghost"} size="sm" onClick={() => scrollToHash("#features")}>
+            {t("nav.features")}
+          </Button>
+          <Button variant={isActive("/", "#how-it-works") ? "secondary" : "ghost"} size="sm" onClick={() => scrollToHash("#how-it-works")}>
+            {t("nav.howItWorks")}
+          </Button>
+          <Link to="/pricing" onClick={() => setActiveHash("")}>
+            <Button variant={isActive("/pricing") ? "secondary" : "ghost"} size="sm">
+              {t("nav.pricing")}
             </Button>
           </Link>
         </div>
@@ -61,7 +90,7 @@ export function Navbar() {
               <Link to="/dashboard">
                 <Button size="sm" className="rounded-full bg-primary px-5 text-white hover:bg-primary/90">
                   <LayoutDashboard className="mr-1.5 h-4 w-4" />
-                  进入工作台
+                  {t("nav.dashboard")}
                 </Button>
               </Link>
               <div className="flex items-center gap-2 rounded-full bg-primary/10 px-3.5 py-1.5">
@@ -74,19 +103,19 @@ export function Navbar() {
               </div>
               <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground">
                 <LogOut className="mr-1.5 h-4 w-4" />
-                退出
+                {t("nav.logout")}
               </Button>
             </>
           ) : (
             <>
               <Link to="/login">
                 <Button variant="ghost" size="sm">
-                  登录
+                  {t("nav.login")}
                 </Button>
               </Link>
               <Link to="/register">
                 <Button size="sm" className="rounded-full bg-primary px-5 text-white hover:bg-primary/90">
-                  免费注册
+                  {t("nav.register")}
                 </Button>
               </Link>
             </>
@@ -107,7 +136,7 @@ export function Navbar() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="overflow-hidden border-t border-border bg-white/95 backdrop-blur-xl md:hidden"
+            className="overflow-hidden border-t border-border bg-card/95 backdrop-blur-xl md:hidden"
           >
             <div className="flex flex-col gap-2 px-4 py-4">
               {user && (
@@ -127,10 +156,10 @@ export function Navbar() {
                 </motion.div>
               )}
               {[
-                { to: "/", label: "首页", isLink: true },
-                { to: "/#features", label: "功能", isLink: false },
-                { to: "/#how-it-works", label: "使用流程", isLink: false },
-                { to: "/pricing", label: "定价", isLink: true },
+                { to: "/", label: t("nav.home"), isLink: true },
+                { to: "/#features", label: t("nav.features"), isLink: false, hash: "#features" },
+                { to: "/#how-it-works", label: t("nav.howItWorks"), isLink: false, hash: "#how-it-works" },
+                { to: "/pricing", label: t("nav.pricing"), isLink: true },
               ].map((item, i) => (
                 <motion.div
                   key={item.label}
@@ -143,9 +172,9 @@ export function Navbar() {
                       <Button variant="ghost" className="w-full justify-start">{item.label}</Button>
                     </Link>
                   ) : (
-                    <a href={item.to} onClick={() => setMobileOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start">{item.label}</Button>
-                    </a>
+                    <Button variant="ghost" className="w-full justify-start" onClick={() => { scrollToHash(item.hash!); setMobileOpen(false); }}>
+                      {item.label}
+                    </Button>
                   )}
                 </motion.div>
               ))}
@@ -160,7 +189,7 @@ export function Navbar() {
                     <Link to="/dashboard" className="flex-1" onClick={() => setMobileOpen(false)}>
                       <Button className="w-full bg-primary text-white">
                         <LayoutDashboard className="mr-1.5 h-4 w-4" />
-                        进入工作台
+                        {t("nav.dashboard")}
                       </Button>
                     </Link>
                     <Button variant="outline" onClick={handleLogout}>
@@ -170,10 +199,10 @@ export function Navbar() {
                 ) : (
                   <>
                     <Link to="/login" className="flex-1" onClick={() => setMobileOpen(false)}>
-                      <Button variant="outline" className="w-full">登录</Button>
+                      <Button variant="outline" className="w-full">{t("nav.login")}</Button>
                     </Link>
                     <Link to="/register" className="flex-1" onClick={() => setMobileOpen(false)}>
-                      <Button className="w-full bg-primary text-white">免费注册</Button>
+                      <Button className="w-full bg-primary text-white">{t("nav.register")}</Button>
                     </Link>
                   </>
                 )}

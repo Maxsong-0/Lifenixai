@@ -14,98 +14,59 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "./ui/button";
+import { useLanguage } from "./LanguageContext";
 
 interface Notification {
   id: string;
   type: "task" | "calendar" | "ai" | "system" | "achievement";
-  title: string;
-  desc: string;
-  time: string;
+  titleKey: string;
+  descKey: string;
+  timeKey: string;
   read: boolean;
   icon: React.ElementType;
   iconColor: string;
   iconBg: string;
 }
 
-const initialNotifications: Notification[] = [
-  {
-    id: "1",
-    type: "ai",
-    title: "AI 日程优化建议",
-    desc: "检测到你下午有 2 小时空闲，建议安排深度工作任务。",
-    time: "5 分钟前",
-    read: false,
-    icon: Sparkles,
-    iconColor: "text-primary",
-    iconBg: "bg-primary/10",
-  },
-  {
-    id: "2",
-    type: "calendar",
-    title: "会议即将开始",
-    desc: "「产品评审会议」将在 15 分钟后开始。",
-    time: "10 分钟前",
-    read: false,
-    icon: CalendarDays,
-    iconColor: "text-blue-600",
-    iconBg: "bg-blue-50",
-  },
-  {
-    id: "3",
-    type: "task",
-    title: "任务到期提醒",
-    desc: "「完成季度项目报告」今天到期，请及时完成。",
-    time: "30 分钟前",
-    read: false,
-    icon: CircleAlert,
-    iconColor: "text-red-500",
-    iconBg: "bg-red-50",
-  },
-  {
-    id: "4",
-    type: "achievement",
-    title: "效率提升 12%",
-    desc: "恭喜！你本周的任务完成效率比上周提升了 12%。",
-    time: "1 小时前",
-    read: true,
-    icon: TrendingUp,
-    iconColor: "text-emerald-600",
-    iconBg: "bg-emerald-50",
-  },
-  {
-    id: "5",
-    type: "task",
-    title: "任务已完成",
-    desc: "你已完成「回复客户邮件」任务，继续保持！",
-    time: "2 小时前",
-    read: true,
-    icon: Check,
-    iconColor: "text-emerald-600",
-    iconBg: "bg-emerald-50",
-  },
-  {
-    id: "6",
-    type: "system",
-    title: "系统更新",
-    desc: "Lifenix AI v2.1 已发布，新增语音提醒和团队协作功能。",
-    time: "昨天",
-    read: true,
-    icon: Bell,
-    iconColor: "text-gray-500",
-    iconBg: "bg-gray-50",
-  },
-  {
-    id: "7",
-    type: "ai",
-    title: "周报已生成",
-    desc: "AI 已为你生成本周效率报告，点击查看详情。",
-    time: "昨天",
-    read: true,
-    icon: Sparkles,
-    iconColor: "text-primary",
-    iconBg: "bg-primary/10",
-  },
-];
+function useNotificationData(): Notification[] {
+  return [
+    {
+      id: "1", type: "ai",
+      titleKey: "notif.ai.schedule.title", descKey: "notif.ai.schedule.desc", timeKey: "notif.ai.schedule.time",
+      read: false, icon: Sparkles, iconColor: "text-primary", iconBg: "bg-primary/10",
+    },
+    {
+      id: "2", type: "calendar",
+      titleKey: "notif.calendar.meeting.title", descKey: "notif.calendar.meeting.desc", timeKey: "notif.calendar.meeting.time",
+      read: false, icon: CalendarDays, iconColor: "text-blue-600", iconBg: "bg-blue-50",
+    },
+    {
+      id: "3", type: "task",
+      titleKey: "notif.task.due.title", descKey: "notif.task.due.desc", timeKey: "notif.task.due.time",
+      read: false, icon: CircleAlert, iconColor: "text-red-500", iconBg: "bg-red-50",
+    },
+    {
+      id: "4", type: "achievement",
+      titleKey: "notif.achievement.title", descKey: "notif.achievement.desc", timeKey: "notif.achievement.time",
+      read: true, icon: TrendingUp, iconColor: "text-emerald-600", iconBg: "bg-emerald-50",
+    },
+    {
+      id: "5", type: "task",
+      titleKey: "notif.task.done.title", descKey: "notif.task.done.desc", timeKey: "notif.task.done.time",
+      read: true, icon: Check, iconColor: "text-emerald-600", iconBg: "bg-emerald-50",
+    },
+    {
+      id: "6", type: "system",
+      titleKey: "notif.system.update.title", descKey: "notif.system.update.desc", timeKey: "notif.system.update.time",
+      read: true, icon: Bell, iconColor: "text-gray-500", iconBg: "bg-gray-50",
+    },
+    {
+      id: "7", type: "ai",
+      titleKey: "notif.ai.report.title", descKey: "notif.ai.report.desc", timeKey: "notif.ai.report.time",
+      read: true, icon: Sparkles, iconColor: "text-primary", iconBg: "bg-primary/10",
+    },
+  ];
+}
 
 interface NotificationPanelProps {
   open: boolean;
@@ -113,7 +74,8 @@ interface NotificationPanelProps {
 }
 
 export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const { t } = useLanguage();
+  const [notifications, setNotifications] = useState(useNotificationData);
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -153,12 +115,12 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute right-0 top-full z-[91] mt-2 w-[380px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-border/50 bg-white shadow-xl"
+            className="absolute right-0 top-full z-[91] mt-2 w-[380px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-border/50 bg-card shadow-xl"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border/50 px-5 py-3.5">
               <div className="flex items-center gap-2">
-                <h3 className="text-[0.9375rem]" style={{ fontWeight: 600 }}>通知</h3>
+                <h3 className="text-[0.9375rem]" style={{ fontWeight: 600 }}>{t("notif.title")}</h3>
                 {unreadCount > 0 && (
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[0.6875rem] text-white" style={{ fontWeight: 600 }}>
                     {unreadCount}
@@ -170,7 +132,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
                   <button
                     onClick={markAllRead}
                     className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
-                    title="全部已读"
+                    title={t("notif.markAllRead")}
                   >
                     <CheckCheck className="h-4 w-4" />
                   </button>
@@ -197,7 +159,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
                   }`}
                   style={{ fontWeight: filter === f ? 600 : 400 }}
                 >
-                  {f === "all" ? "全部" : `未读 (${unreadCount})`}
+                  {f === "all" ? t("notif.all") : `${t("notif.unread")} (${unreadCount})`}
                 </button>
               ))}
             </div>
@@ -226,14 +188,14 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-[0.8125rem]" style={{ fontWeight: n.read ? 400 : 600 }}>
-                          {n.title}
+                          {t(n.titleKey)}
                         </div>
                         <p className="mt-0.5 text-[0.75rem] text-muted-foreground leading-relaxed line-clamp-2">
-                          {n.desc}
+                          {t(n.descKey)}
                         </p>
                         <div className="mt-1 flex items-center gap-1.5 text-[0.6875rem] text-muted-foreground/60">
                           <Clock className="h-3 w-3" />
-                          {n.time}
+                          {t(n.timeKey)}
                         </div>
                       </div>
                       <div className="flex shrink-0 items-start gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -241,7 +203,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
                           <button
                             onClick={() => markRead(n.id)}
                             className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                            title="标为已读"
+                            title={t("notif.markRead")}
                           >
                             <Check className="h-3.5 w-3.5" />
                           </button>
@@ -249,7 +211,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
                         <button
                           onClick={() => deleteNotification(n.id)}
                           className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                          title="删除"
+                          title={t("notif.delete")}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -261,7 +223,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
                 <div className="py-12 text-center">
                   <Bell className="mx-auto mb-2 h-8 w-8 text-muted-foreground/20" />
                   <p className="text-[0.875rem] text-muted-foreground">
-                    {filter === "unread" ? "没有未读通知" : "暂无通知"}
+                    {filter === "unread" ? t("notif.noUnread") : t("notif.empty")}
                   </p>
                 </div>
               )}

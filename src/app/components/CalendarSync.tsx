@@ -26,7 +26,8 @@ import {
   Upload,
 } from "lucide-react";
 import { format, isSameDay, addDays } from "date-fns";
-import { zhCN } from "date-fns/locale";
+import { zhCN, enUS as enUSDateFns } from "date-fns/locale";
+import { useLanguage } from "./LanguageContext";
 
 /* ═══════════════ Types ═══════════════ */
 export type CalendarSourceType = "google" | "apple" | "outlook" | "caldav" | "lifenix";

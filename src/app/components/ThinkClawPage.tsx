@@ -40,6 +40,7 @@ import {
   Pencil,
   Pin,
 } from "lucide-react";
+import { useLanguage } from "./LanguageContext";
 
 /* ═══════════════════════════════════════════
    Types

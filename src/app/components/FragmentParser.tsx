@@ -32,7 +32,8 @@ import {
   Flag,
 } from "lucide-react";
 import { format, addDays } from "date-fns";
-import { zhCN } from "date-fns/locale";
+import { zhCN, enUS as enUSDateFns } from "date-fns/locale";
+import { useLanguage } from "./LanguageContext";
 
 /* ═══════════════ Types ═══════════════ */
 type ParseMode = "chat" | "document";
@@ -396,7 +397,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 24 }}
             transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
-            className="fixed inset-x-3 top-[2%] bottom-[2%] sm:inset-x-auto sm:left-1/2 sm:top-[4%] sm:bottom-[4%] sm:w-[calc(100%-3rem)] sm:max-w-3xl sm:-translate-x-1/2 z-[81] flex flex-col rounded-2xl border border-border/50 bg-white shadow-2xl overflow-hidden"
+            className="fixed inset-x-3 top-[2%] bottom-[2%] sm:inset-x-auto sm:left-1/2 sm:top-[4%] sm:bottom-[4%] sm:w-[calc(100%-3rem)] sm:max-w-3xl sm:-translate-x-1/2 z-[81] flex flex-col rounded-2xl border border-border/50 bg-card shadow-2xl overflow-hidden"
           >
             {/* ───── Header ───── */}
             <div className="flex shrink-0 items-center justify-between border-b border-border/50 px-4 py-3 sm:px-6 sm:py-4">
@@ -845,7 +846,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                     className="space-y-4"
                   >
                     {/* Document summary */}
-                    <div className="rounded-xl border border-border/40 bg-white overflow-hidden">
+                    <div className="rounded-xl border border-border/40 bg-card overflow-hidden">
                       <div className="px-3 sm:px-4 py-3 border-b border-border/20 bg-muted/20">
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4 text-primary" />
@@ -896,7 +897,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                     </div>
 
                     {/* Action Items */}
-                    <div className="rounded-xl border border-border/40 bg-white overflow-hidden">
+                    <div className="rounded-xl border border-border/40 bg-card overflow-hidden">
                       <div className="flex items-center justify-between px-3 sm:px-4 py-3 border-b border-border/20 bg-muted/20">
                         <div className="flex items-center gap-2">
                           <ListTodo className="h-4 w-4 text-amber-600" />

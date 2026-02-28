@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useAuth } from "./AuthContext";
+import { useLanguage } from "./LanguageContext";
 import {
   Sparkles,
   Mail,
@@ -18,6 +19,7 @@ import { motion } from "motion/react";
 
 export function LoginPage() {
   const { login } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,8 +31,8 @@ export function LoginPage() {
     e.preventDefault();
     setError("");
 
-    if (!email.trim()) return setError("请输入邮箱地址");
-    if (!password) return setError("请输入密码");
+    if (!email.trim()) return setError(t("auth.login.error.email"));
+    if (!password) return setError(t("auth.login.error.password"));
 
     setLoading(true);
     const result = await login(email, password);
@@ -39,7 +41,7 @@ export function LoginPage() {
     if (result.success) {
       navigate("/dashboard");
     } else {
-      setError(result.error || "登录失败");
+      setError(result.error || t("auth.login.error.failed"));
     }
   };
 
@@ -62,10 +64,10 @@ export function LoginPage() {
             </span>
           </Link>
           <h1 className="text-[1.75rem] tracking-tight" style={{ fontWeight: 700 }}>
-            欢迎回来
+            {t("auth.login.title")}
           </h1>
           <p className="mt-2 text-[0.9375rem] text-muted-foreground">
-            登录你的账号，继续高效生活
+            {t("auth.login.subtitle2")}
           </p>
         </div>
 
@@ -74,12 +76,12 @@ export function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email */}
             <div>
-              <label className="mb-1.5 block text-[0.8125rem] text-muted-foreground">邮箱地址</label>
+              <label className="mb-1.5 block text-[0.8125rem] text-muted-foreground">{t("auth.login.email")}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
                 <Input
                   type="email"
-                  placeholder="your@email.com"
+                  placeholder={t("auth.login.emailPlaceholder")}
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setError(""); }}
                   className="h-11 rounded-xl pl-10"
@@ -90,12 +92,12 @@ export function LoginPage() {
 
             {/* Password */}
             <div>
-              <label className="mb-1.5 block text-[0.8125rem] text-muted-foreground">密码</label>
+              <label className="mb-1.5 block text-[0.8125rem] text-muted-foreground">{t("auth.login.password")}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
                 <Input
                   type={showPwd ? "text" : "password"}
-                  placeholder="输入密码"
+                  placeholder={t("auth.login.passwordPlaceholder")}
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(""); }}
                   className="h-11 rounded-xl pl-10 pr-10"
@@ -133,20 +135,20 @@ export function LoginPage() {
               ) : (
                 <ArrowRight className="mr-2 h-4 w-4" />
               )}
-              {loading ? "登录中..." : "登录"}
+              {loading ? t("auth.login.submitting") : t("auth.login.submit")}
             </Button>
           </form>
         </div>
 
         {/* Switch to register */}
         <p className="mt-6 text-center text-[0.875rem] text-muted-foreground">
-          还没有账号？{" "}
+          {t("auth.login.noAccount")}{" "}
           <Link
             to="/register"
             className="text-primary hover:underline"
             style={{ fontWeight: 600 }}
           >
-            免费注册
+            {t("auth.login.registerLink")}
           </Link>
         </p>
       </motion.div>
@@ -156,6 +158,7 @@ export function LoginPage() {
 
 export function RegisterPage() {
   const { register } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -167,21 +170,21 @@ export function RegisterPage() {
   const [agreed, setAgreed] = useState(false);
 
   const passwordChecks = [
-    { label: "至少 6 个字符", valid: password.length >= 6 },
-    { label: "包含数字", valid: /\d/.test(password) },
-    { label: "包含字母", valid: /[a-zA-Z]/.test(password) },
+    { label: t("auth.register.pwdCheck.chars"), valid: password.length >= 6 },
+    { label: t("auth.register.pwdCheck.number"), valid: /\d/.test(password) },
+    { label: t("auth.register.pwdCheck.letter"), valid: /[a-zA-Z]/.test(password) },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!name.trim()) return setError("请输入你的名字");
-    if (!email.trim()) return setError("请输入邮箱地址");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("请输入有效的邮箱地址");
-    if (password.length < 6) return setError("密码至少需要6个字符");
-    if (password !== confirmPwd) return setError("两次输入的密码不一致");
-    if (!agreed) return setError("请同意服务条款和隐私政策");
+    if (!name.trim()) return setError(t("auth.register.error.name"));
+    if (!email.trim()) return setError(t("auth.register.error.email"));
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError(t("auth.register.error.emailInvalid"));
+    if (password.length < 6) return setError(t("auth.register.error.password"));
+    if (password !== confirmPwd) return setError(t("auth.register.error.confirmPassword"));
+    if (!agreed) return setError(t("auth.register.error.agreement"));
 
     setLoading(true);
     const result = await register(email, password, name);
@@ -190,7 +193,7 @@ export function RegisterPage() {
     if (result.success) {
       navigate("/dashboard");
     } else {
-      setError(result.error || "注册失败");
+      setError(result.error || t("auth.register.error.failed"));
     }
   };
 
@@ -213,10 +216,10 @@ export function RegisterPage() {
             </span>
           </Link>
           <h1 className="text-[1.75rem] tracking-tight" style={{ fontWeight: 700 }}>
-            创建账号
+            {t("auth.register.title")}
           </h1>
           <p className="mt-2 text-[0.9375rem] text-muted-foreground">
-            免费注册，开始你的高效生活之旅
+            {t("auth.register.subtitle2")}
           </p>
         </div>
 
@@ -225,12 +228,12 @@ export function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name */}
             <div>
-              <label className="mb-1.5 block text-[0.8125rem] text-muted-foreground">你的名字</label>
+              <label className="mb-1.5 block text-[0.8125rem] text-muted-foreground">{t("auth.register.yourName")}</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
                 <Input
                   type="text"
-                  placeholder="输入名字"
+                  placeholder={t("auth.register.enterName")}
                   value={name}
                   onChange={(e) => { setName(e.target.value); setError(""); }}
                   className="h-11 rounded-xl pl-10"
@@ -241,12 +244,12 @@ export function RegisterPage() {
 
             {/* Email */}
             <div>
-              <label className="mb-1.5 block text-[0.8125rem] text-muted-foreground">邮箱地址</label>
+              <label className="mb-1.5 block text-[0.8125rem] text-muted-foreground">{t("auth.register.email")}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
                 <Input
                   type="email"
-                  placeholder="your@email.com"
+                  placeholder={t("auth.register.emailPlaceholder")}
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setError(""); }}
                   className="h-11 rounded-xl pl-10"
@@ -257,12 +260,12 @@ export function RegisterPage() {
 
             {/* Password */}
             <div>
-              <label className="mb-1.5 block text-[0.8125rem] text-muted-foreground">设置密码</label>
+              <label className="mb-1.5 block text-[0.8125rem] text-muted-foreground">{t("auth.register.setPassword")}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
                 <Input
                   type={showPwd ? "text" : "password"}
-                  placeholder="至少6个字符"
+                  placeholder={t("auth.register.passwordPlaceholder")}
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(""); }}
                   className="h-11 rounded-xl pl-10 pr-10"
@@ -298,12 +301,12 @@ export function RegisterPage() {
 
             {/* Confirm Password */}
             <div>
-              <label className="mb-1.5 block text-[0.8125rem] text-muted-foreground">确认密码</label>
+              <label className="mb-1.5 block text-[0.8125rem] text-muted-foreground">{t("auth.register.confirmPassword")}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
                 <Input
                   type={showPwd ? "text" : "password"}
-                  placeholder="再次输入密码"
+                  placeholder={t("auth.register.confirmPlaceholder")}
                   value={confirmPwd}
                   onChange={(e) => { setConfirmPwd(e.target.value); setError(""); }}
                   className="h-11 rounded-xl pl-10"
@@ -311,11 +314,11 @@ export function RegisterPage() {
                 />
               </div>
               {confirmPwd.length > 0 && password !== confirmPwd && (
-                <p className="mt-1 text-[0.75rem] text-destructive">密码不一致</p>
+                <p className="mt-1 text-[0.75rem] text-destructive">{t("auth.register.pwdMismatch")}</p>
               )}
               {confirmPwd.length > 0 && password === confirmPwd && confirmPwd.length >= 6 && (
                 <p className="mt-1 text-[0.75rem] text-emerald-600 flex items-center gap-1">
-                  <CircleCheck className="h-3 w-3" /> 密码一致
+                  <CircleCheck className="h-3 w-3" /> {t("auth.register.pwdMatch")}
                 </p>
               )}
             </div>
@@ -329,10 +332,10 @@ export function RegisterPage() {
                 className="mt-0.5 h-4 w-4 appearance-none rounded-full border border-border bg-background checked:bg-primary checked:border-primary cursor-pointer relative after:content-[''] after:absolute after:inset-0 after:m-auto after:h-2 after:w-2 after:rounded-full checked:after:bg-background after:hidden checked:after:block"
               />
               <span className="text-[0.8125rem] text-muted-foreground leading-snug">
-                我已阅读并同意{" "}
-                <span className="text-primary cursor-pointer hover:underline">服务条款</span>
-                {" "}和{" "}
-                <span className="text-primary cursor-pointer hover:underline">隐私政策</span>
+                {t("auth.register.agreement.pre")}{" "}
+                <span className="text-primary cursor-pointer hover:underline">{t("auth.register.agreement.terms")}</span>
+                {" "}{t("auth.register.agreement.and")}{" "}
+                <span className="text-primary cursor-pointer hover:underline">{t("auth.register.agreement.privacy")}</span>
               </span>
             </label>
 
@@ -358,20 +361,20 @@ export function RegisterPage() {
               ) : (
                 <Sparkles className="mr-2 h-4 w-4" />
               )}
-              {loading ? "注册中..." : "免费注册"}
+              {loading ? t("auth.register.submitting") : t("auth.register.submit")}
             </Button>
           </form>
         </div>
 
         {/* Switch to login */}
         <p className="mt-6 text-center text-[0.875rem] text-muted-foreground">
-          已有账号？{" "}
+          {t("auth.register.hasAccount")}{" "}
           <Link
             to="/login"
             className="text-primary hover:underline"
             style={{ fontWeight: 600 }}
           >
-            立即登录
+            {t("auth.register.loginLink")}
           </Link>
         </p>
       </motion.div>

@@ -28,26 +28,28 @@ import { SearchModal } from "./SearchModal";
 import { NotificationPanel } from "./NotificationPanel";
 import { AIChatDrawer } from "./AIChatDrawer";
 import { Badge } from "./ui/badge";
+import { useLanguage } from "./LanguageContext";
 
 export type DashboardTab = "tasks" | "calendar" | "circles" | "stats" | "focus" | "settings" | "help";
 
 const navItems = [
-  { key: "tasks" as DashboardTab, label: "任务日程", icon: ListTodo },
-  { key: "calendar" as DashboardTab, label: "日程规划", icon: CalendarDays },
-  { key: "focus" as DashboardTab, label: "专注空间", icon: Target },
-  { key: "circles" as DashboardTab, label: "协作空间", icon: Users },
-  { key: "stats" as DashboardTab, label: "数据统计", icon: BarChart3 },
+  { key: "tasks" as DashboardTab, labelKey: "sidebar.tasks", icon: ListTodo },
+  { key: "calendar" as DashboardTab, labelKey: "sidebar.calendar", icon: CalendarDays },
+  { key: "focus" as DashboardTab, labelKey: "sidebar.focus", icon: Target },
+  { key: "circles" as DashboardTab, labelKey: "sidebar.circles", icon: Users },
+  { key: "stats" as DashboardTab, labelKey: "sidebar.stats", icon: BarChart3 },
 ];
 
-const bottomItems = [
-  { key: "help" as DashboardTab, label: "帮助中心", icon: HelpCircle },
-  { key: "settings" as DashboardTab, label: "设置", icon: Settings },
+const bottomItemsDef = [
+  { key: "help" as DashboardTab, labelKey: "sidebar.help", icon: HelpCircle },
+  { key: "settings" as DashboardTab, labelKey: "sidebar.settings", icon: Settings },
 ];
 
 export function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, locale, dateLocale } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -91,12 +93,14 @@ export function AppLayout() {
 
   const getGreeting = () => {
     const h = new Date().getHours();
-    if (h < 6) return "夜深了";
-    if (h < 12) return "早上好";
-    if (h < 14) return "中午好";
-    if (h < 18) return "下午好";
-    return "晚上好";
+    if (h < 6) return t("greeting.lateNight");
+    if (h < 12) return t("greeting.morning");
+    if (h < 14) return t("greeting.noon");
+    if (h < 18) return t("greeting.afternoon");
+    return t("greeting.evening");
   };
+
+  const isEn = locale === "en-US";
 
   const sidebarContent = (
     <>
@@ -141,10 +145,10 @@ export function AppLayout() {
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                 }`}
                 style={{ fontWeight: isActive ? 600 : 400 }}
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? t(item.labelKey) : undefined}
               >
                 <item.icon className={`h-[1.125rem] w-[1.125rem] shrink-0 ${isActive ? "text-primary" : ""}`} />
-                {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
+                {!collapsed && <span className="whitespace-nowrap">{t(item.labelKey)}</span>}
                 {!collapsed && isActive && (
                   <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
                 )}
@@ -157,7 +161,7 @@ export function AppLayout() {
         <div className="mt-4 border-t border-border/30 pt-4">
           {!collapsed && (
             <div className="mb-1.5 px-3 text-[0.6875rem] text-muted-foreground/60 uppercase tracking-wider" style={{ fontWeight: 600 }}>
-              工具
+              {isEn ? "Tools" : "工具"}
             </div>
           )}
           <button
@@ -171,12 +175,12 @@ export function AppLayout() {
             title={collapsed ? "AI 助手" : undefined}
           >
             <MessageSquare className={`h-[1.125rem] w-[1.125rem] shrink-0 ${chatOpen ? "text-primary" : ""}`} />
-            {!collapsed && <span className="whitespace-nowrap">AI 助手</span>}
+            {!collapsed && <span className="whitespace-nowrap">{isEn ? "AI Assistant" : "AI 助手"}</span>}
             {!collapsed && (
               <div className={`ml-auto flex h-5 min-w-5 items-center justify-center rounded-full text-[0.625rem] transition-colors ${
                 chatOpen ? "bg-primary text-white" : "bg-muted text-muted-foreground"
               }`} style={{ fontWeight: 600 }}>
-                {chatOpen ? "开" : "关"}
+                {chatOpen ? (isEn ? "On" : "开") : (isEn ? "Off" : "关")}
               </div>
             )}
           </button>
@@ -199,17 +203,17 @@ export function AppLayout() {
 
         {/* Upgrade card */}
         {!collapsed && (
-          <div className="mt-6 rounded-xl bg-gradient-to-br from-primary/10 via-purple-50 to-pink-50 p-4">
+          <div className="mt-6 rounded-xl bg-gradient-to-br from-primary/10 via-secondary to-accent p-4">
             <div className="mb-2 flex items-center gap-2">
               <Crown className="h-4 w-4 text-primary" />
-              <span className="text-[0.8125rem] text-primary" style={{ fontWeight: 600 }}>升级 Pro</span>
+              <span className="text-[0.8125rem] text-primary" style={{ fontWeight: 600 }}>{t("sidebar.upgradePro")}</span>
             </div>
             <p className="mb-3 text-[0.75rem] text-muted-foreground leading-relaxed">
-              解锁无限AI对话、高级统计分析等专属功能
+              {t("sidebar.upgradeDesc")}
             </p>
             <Link to="/pricing">
               <Button size="sm" className="w-full rounded-lg bg-primary text-[0.8125rem] text-white hover:bg-primary/90">
-                查看方案
+                {t("sidebar.viewPlans")}
               </Button>
             </Link>
           </div>
@@ -219,7 +223,7 @@ export function AppLayout() {
       {/* Bottom items */}
       <div className="border-t border-border/50 px-3 py-3">
         <div className="space-y-1">
-          {bottomItems.map((item) => {
+          {bottomItemsDef.map((item) => {
             const isActive = activeTab === item.key;
             return (
               <button
@@ -231,10 +235,10 @@ export function AppLayout() {
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                 }`}
                 style={{ fontWeight: isActive ? 600 : 400 }}
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? t(item.labelKey) : undefined}
               >
                 <item.icon className={`h-[1.125rem] w-[1.125rem] shrink-0 ${isActive ? "text-primary" : ""}`} />
-                {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
+                {!collapsed && <span className="whitespace-nowrap">{t(item.labelKey)}</span>}
               </button>
             );
           })}
@@ -271,7 +275,7 @@ export function AppLayout() {
 
       {/* Desktop Sidebar */}
       <aside
-        className={`relative hidden md:flex flex-col border-r border-border/50 bg-white/90 backdrop-blur-sm transition-all duration-300 ${
+        className={`relative hidden md:flex flex-col border-r border-border/50 bg-card/90 backdrop-blur-sm transition-all duration-300 ${
           collapsed ? "w-[68px]" : "w-[260px]"
         }`}
         style={{ zIndex: 1 }}
@@ -281,7 +285,7 @@ export function AppLayout() {
         {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="absolute top-[4.5rem] z-10 flex h-6 w-6 items-center justify-center rounded-full border border-border/60 bg-white text-muted-foreground shadow-sm hover:text-foreground transition-colors"
+          className="absolute top-[4.5rem] z-10 flex h-6 w-6 items-center justify-center rounded-full border border-border/60 bg-card text-muted-foreground shadow-sm hover:text-foreground transition-colors"
           style={{ left: collapsed ? "55px" : "247px" }}
         >
           {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
@@ -304,7 +308,7 @@ export function AppLayout() {
               animate={{ x: 0 }}
               exit={{ x: -280 }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col bg-white shadow-xl md:hidden"
+              className="fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col bg-card shadow-xl md:hidden"
             >
               {sidebarContent}
             </motion.aside>
@@ -315,7 +319,7 @@ export function AppLayout() {
       {/* Main area + inline AI panel */}
       <div className="relative flex flex-1 flex-col overflow-hidden" style={{ zIndex: 1 }}>
         {/* Top bar */}
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/50 bg-white/80 backdrop-blur-xl px-3 sm:h-16 sm:px-6">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/50 bg-card/80 backdrop-blur-xl px-3 sm:h-16 sm:px-6">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               className="rounded-lg p-2 hover:bg-muted/60 transition-colors md:hidden shrink-0"
@@ -325,10 +329,10 @@ export function AppLayout() {
             </button>
             <div className="min-w-0">
               <h1 className="text-[0.875rem] sm:text-[1rem] tracking-tight truncate" style={{ fontWeight: 600 }}>
-                {getGreeting()}，{user?.name || "用户"}
+                {getGreeting()}{isEn ? ", " : "，"}{user?.name || (isEn ? "User" : "用户")}
               </h1>
               <p className="text-[0.6875rem] sm:text-[0.75rem] text-muted-foreground truncate">
-                {new Date().toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" })}
+                {new Date().toLocaleDateString(dateLocale, { month: "long", day: "numeric", weekday: "long" })}
               </p>
             </div>
           </div>

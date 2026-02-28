@@ -47,6 +47,7 @@ import {
 import { CircleSchedule } from "./CircleSchedule";
 import { CircleTasks } from "./CircleTasks";
 import { CirclePrivacy } from "./CirclePrivacy";
+import { useLanguage } from "./LanguageContext";
 
 /* ═══════════════ Types ═══════════════ */
 interface Member {

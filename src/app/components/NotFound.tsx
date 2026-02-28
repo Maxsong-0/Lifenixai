@@ -2,8 +2,11 @@ import { Link } from "react-router";
 import { Button } from "./ui/button";
 import { ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
+import { useLanguage } from "./LanguageContext";
 
 export function NotFound() {
+  const { t } = useLanguage();
+
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
       <motion.div
@@ -28,7 +31,7 @@ export function NotFound() {
           className="mt-4 text-[1.5rem]"
           style={{ fontWeight: 600 }}
         >
-          页面未找到
+          {t("notFound.title")}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 10 }}
@@ -36,7 +39,7 @@ export function NotFound() {
           transition={{ duration: 0.4, delay: 0.4 }}
           className="mt-2 text-muted-foreground"
         >
-          你要找的页面不存在或已被移动。
+          {t("notFound.subtitle")}
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -46,7 +49,7 @@ export function NotFound() {
           <Link to="/">
             <Button className="mt-6 rounded-full bg-primary text-white hover:bg-primary/90">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              返回首页
+              {t("notFound.backHome")}
             </Button>
           </Link>
         </motion.div>
