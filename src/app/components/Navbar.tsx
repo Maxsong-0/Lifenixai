@@ -76,11 +76,9 @@ export function Navbar() {
           <Button variant={isActive("/", "#how-it-works") ? "secondary" : "ghost"} size="sm" onClick={() => scrollToHash("#how-it-works")}>
             {t("nav.howItWorks")}
           </Button>
-          <Link to="/pricing" onClick={() => setActiveHash("")}>
-            <Button variant={isActive("/pricing") ? "secondary" : "ghost"} size="sm">
-              {t("nav.pricing")}
-            </Button>
-          </Link>
+          <Button variant={isActive("/", "#pricing") ? "secondary" : "ghost"} size="sm" onClick={() => scrollToHash("#pricing")}>
+            {t("nav.pricing")}
+          </Button>
         </div>
 
         {/* Right side - auth buttons */}
@@ -159,7 +157,7 @@ export function Navbar() {
                 { to: "/", label: t("nav.home"), isLink: true },
                 { to: "/#features", label: t("nav.features"), isLink: false, hash: "#features" },
                 { to: "/#how-it-works", label: t("nav.howItWorks"), isLink: false, hash: "#how-it-works" },
-                { to: "/pricing", label: t("nav.pricing"), isLink: true },
+                { to: "/#pricing", label: t("nav.pricing"), isLink: false, hash: "#pricing" },
               ].map((item, i) => (
                 <motion.div
                   key={item.label}

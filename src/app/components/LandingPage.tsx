@@ -396,6 +396,92 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section id="pricing" className="bg-gradient-to-b from-transparent via-primary/3 to-transparent px-4 py-24 sm:px-6 lg:px-8 scroll-mt-20">
+        <div className="mx-auto max-w-5xl">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mx-auto mb-16 max-w-2xl text-center">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-primary">
+              <Sparkles className="h-4 w-4" />
+              <span className="text-[0.875rem]">{t("landing.pricing.heading")}</span>
+            </div>
+            <h2 className="mb-4 text-[2rem] tracking-tight sm:text-[2.5rem]" style={{ fontWeight: 700 }}>
+              {t("landing.pricing.heading")}
+            </h2>
+            <p className="text-[1.0625rem] text-muted-foreground leading-relaxed">
+              {t("landing.pricing.headingSub")}
+            </p>
+          </motion.div>
+
+          <div className="grid gap-8 md:grid-cols-2 max-w-3xl mx-auto">
+            {/* Free plan */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}
+              className="rounded-2xl border border-border/50 bg-white p-8">
+              <div className="mb-6">
+                <h3 className="mb-1 text-[1.25rem]" style={{ fontWeight: 600 }}>{t("landing.pricing.free")}</h3>
+                <p className="text-[0.875rem] text-muted-foreground">{t("landing.pricing.freeDesc")}</p>
+              </div>
+              <div className="mb-6">
+                <span className="text-[2.5rem] tracking-tight" style={{ fontWeight: 800 }}>{t("landing.pricing.freePrice")}</span>
+              </div>
+              <div className="mb-8 space-y-3">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <CircleCheck className="h-4 w-4 shrink-0 text-emerald-500" />
+                    <span className="text-[0.9375rem] text-muted-foreground">{t(`landing.pricing.freeF${i}`)}</span>
+                  </div>
+                ))}
+              </div>
+              <Link to="/register">
+                <Button variant="outline" size="lg" className="w-full rounded-full">
+                  {t("landing.pricing.freeCta")}
+                </Button>
+              </Link>
+            </motion.div>
+
+            {/* Pro plan */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}
+              className="relative rounded-2xl border-2 border-primary/30 bg-gradient-to-b from-primary/5 to-white p-8 shadow-lg shadow-primary/5">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                <span className="rounded-full bg-primary px-4 py-1 text-[0.75rem] text-white" style={{ fontWeight: 600 }}>
+                  {t("landing.pricing.proBadge")}
+                </span>
+              </div>
+              <div className="mb-6">
+                <h3 className="mb-1 text-[1.25rem] text-primary" style={{ fontWeight: 600 }}>{t("landing.pricing.pro")}</h3>
+                <p className="text-[0.875rem] text-muted-foreground">{t("landing.pricing.proDesc")}</p>
+              </div>
+              <div className="mb-1">
+                <span className="text-[2.5rem] tracking-tight text-primary" style={{ fontWeight: 800 }}>{t("landing.pricing.proPrice")}</span>
+                <span className="text-[1rem] text-muted-foreground">{t("landing.pricing.proPeriod")}</span>
+              </div>
+              <p className="mb-6 text-[0.8125rem] text-primary/70">{t("landing.pricing.proYearly")}</p>
+              <div className="mb-8 space-y-3">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <CircleCheck className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="text-[0.9375rem] text-foreground">{t(`landing.pricing.proF${i}`)}</span>
+                  </div>
+                ))}
+              </div>
+              <Link to="/register">
+                <Button size="lg" className="w-full rounded-full bg-primary text-white shadow-lg shadow-primary/25 hover:bg-primary/90">
+                  {t("landing.pricing.proCta")}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </motion.div>
+          </div>
+
+          {/* View full comparison link */}
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 }} className="mt-10 text-center">
+            <Link to="/pricing" className="inline-flex items-center gap-1.5 text-[0.9375rem] text-primary hover:underline transition-colors" style={{ fontWeight: 500 }}>
+              {t("landing.pricing.viewAll")}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section className="px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
