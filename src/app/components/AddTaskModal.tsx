@@ -69,86 +69,88 @@ const colorTagKeys = [
 ];
 
 /* ═══════════════ AI Simulation ═══════════════ */
-function simulateAIAnalysis(text: string): Promise<{ priority: "high" | "medium" | "low"; category: string; color: string; dueDate: string; dueTime: string; reasoning: string }> {
+function simulateAIAnalysis(text: string, isEn = false): Promise<{ priority: "high" | "medium" | "low"; category: string; color: string; dueDate: string; dueTime: string; reasoning: string }> {
   return new Promise((resolve) => {
     setTimeout(() => {
       const lower = text.toLowerCase();
 
       let priority: "high" | "medium" | "low" = "medium";
-      let category = "其他";
+      let category = isEn ? "Other" : "其他";
       let color = "bg-purple-500";
       let dueDate = "";
       let dueTime = "";
       const reasons: string[] = [];
 
       // Priority detection
-      if (lower.includes("紧急") || lower.includes("马上") || lower.includes("立刻") || lower.includes("deadline") || lower.includes("截止")) {
+      if (lower.includes("紧急") || lower.includes("马上") || lower.includes("立刻") || lower.includes("deadline") || lower.includes("截止") || lower.includes("urgent") || lower.includes("asap")) {
         priority = "high";
-        reasons.push("检测到紧急关键词，设为高优先级");
-      } else if (lower.includes("尽快") || lower.includes("重要") || lower.includes("今天") || lower.includes("明天")) {
+        reasons.push(isEn ? "Urgent keyword detected, set to high priority" : "检测到紧急关键词，设为高优先级");
+      } else if (lower.includes("尽快") || lower.includes("重要") || lower.includes("今天") || lower.includes("明天") || lower.includes("today") || lower.includes("tomorrow") || lower.includes("important")) {
         priority = "high";
-        reasons.push("检测到时间紧迫关键词，设为高优先级");
-      } else if (lower.includes("不急") || lower.includes("有空") || lower.includes("闲了") || lower.includes("以后")) {
+        reasons.push(isEn ? "Time-sensitive keyword detected, set to high priority" : "检测到时间紧迫关键词，设为高优先级");
+      } else if (lower.includes("不急") || lower.includes("有空") || lower.includes("闲了") || lower.includes("以后") || lower.includes("no rush") || lower.includes("whenever") || lower.includes("later")) {
         priority = "low";
-        reasons.push("检测到低优先级暗示，设为不急");
+        reasons.push(isEn ? "Low priority hint detected, set to low" : "检测到低优先级暗示，设为不急");
       } else {
-        reasons.push("未检测到明确优先级信号，默认一般优先级");
+        reasons.push(isEn ? "No clear priority signal, default to medium" : "未检测到明确优先级信号，默认一般优先级");
       }
 
       // Category detection
-      if (lower.includes("会议") || lower.includes("开会") || lower.includes("讨论") || lower.includes("周会")) {
-        category = "会议";
+      if (lower.includes("会议") || lower.includes("开会") || lower.includes("讨论") || lower.includes("周会") || lower.includes("meeting") || lower.includes("discuss")) {
+        category = isEn ? "Meeting" : "会议";
         color = "bg-blue-500";
-        reasons.push("识别为会议相关任务");
-      } else if (lower.includes("报告") || lower.includes("文档") || lower.includes("邮件") || lower.includes("项目") || lower.includes("代码") || lower.includes("工作")) {
-        category = "工作";
+        reasons.push(isEn ? "Identified as meeting-related task" : "识别为会议相关任务");
+      } else if (lower.includes("报告") || lower.includes("文档") || lower.includes("邮件") || lower.includes("项目") || lower.includes("代码") || lower.includes("工作") || lower.includes("report") || lower.includes("code") || lower.includes("project") || lower.includes("work")) {
+        category = isEn ? "Work" : "工作";
         color = "bg-purple-500";
-        reasons.push("识别为工作相关任务");
-      } else if (lower.includes("健身") || lower.includes("跑步") || lower.includes("锻炼") || lower.includes("吃药") || lower.includes("体检")) {
-        category = "健康";
+        reasons.push(isEn ? "Identified as work-related task" : "识别为工作相关任务");
+      } else if (lower.includes("健身") || lower.includes("跑步") || lower.includes("锻炼") || lower.includes("吃药") || lower.includes("体检") || lower.includes("gym") || lower.includes("exercise") || lower.includes("health")) {
+        category = isEn ? "Health" : "健康";
         color = "bg-emerald-500";
-        reasons.push("识别为健康相关任务");
-      } else if (lower.includes("读") || lower.includes("学习") || lower.includes("课程") || lower.includes("培训")) {
-        category = "学习";
+        reasons.push(isEn ? "Identified as health-related task" : "识别为健康相关任务");
+      } else if (lower.includes("读") || lower.includes("学习") || lower.includes("课程") || lower.includes("培训") || lower.includes("study") || lower.includes("learn") || lower.includes("course")) {
+        category = isEn ? "Learning" : "学习";
         color = "bg-cyan-500";
-        reasons.push("识别为学习相关任务");
-      } else if (lower.includes("买") || lower.includes("超市") || lower.includes("快递") || lower.includes("打扫") || lower.includes("做饭")) {
-        category = "生活";
+        reasons.push(isEn ? "Identified as learning-related task" : "识别为学习相关任务");
+      } else if (lower.includes("买") || lower.includes("超市") || lower.includes("快递") || lower.includes("打扫") || lower.includes("做饭") || lower.includes("buy") || lower.includes("grocery") || lower.includes("clean") || lower.includes("cook")) {
+        category = isEn ? "Life" : "生活";
         color = "bg-amber-500";
-        reasons.push("识别为生活相关任务");
-      } else if (lower.includes("账单") || lower.includes("缴费") || lower.includes("工资") || lower.includes("报销")) {
-        category = "财务";
+        reasons.push(isEn ? "Identified as life-related task" : "识别为生活相关任务");
+      } else if (lower.includes("账单") || lower.includes("缴费") || lower.includes("工资") || lower.includes("报销") || lower.includes("bill") || lower.includes("payment") || lower.includes("invoice")) {
+        category = isEn ? "Finance" : "财务";
         color = "bg-orange-500";
-        reasons.push("识别为财务相关任务");
+        reasons.push(isEn ? "Identified as finance-related task" : "识别为财务相关任务");
       } else {
-        reasons.push("未匹配到明确分类，归为其他");
+        reasons.push(isEn ? "No clear category match, filed as Other" : "未匹配到明确分类，归为其他");
       }
 
       // Time detection
       const timeMatch = lower.match(/(\d{1,2})[:\uff1a](\d{2})/);
       if (timeMatch) {
         dueTime = `${timeMatch[1].padStart(2, "0")}:${timeMatch[2]}`;
-        reasons.push(`检测到时间：${dueTime}`);
+        reasons.push(isEn ? `Detected time: ${dueTime}` : `检测到时间：${dueTime}`);
       }
 
-      if (lower.includes("今天") || lower.includes("今日")) {
+      if (lower.includes("今天") || lower.includes("今日") || lower.includes("today")) {
         const d = new Date();
         dueDate = d.toISOString().split("T")[0];
-        reasons.push("检测到「今天」，设置截止日期为今日");
-      } else if (lower.includes("明天") || lower.includes("明日")) {
+        reasons.push(isEn ? "Detected 'today', set due date to today" : "检测到「今天」，设置截止日期为今日");
+      } else if (lower.includes("明天") || lower.includes("明日") || lower.includes("tomorrow")) {
         const d = new Date();
         d.setDate(d.getDate() + 1);
         dueDate = d.toISOString().split("T")[0];
-        reasons.push("检测到「明天」，设置截止日期为明日");
-      } else if (lower.includes("后天")) {
+        reasons.push(isEn ? "Detected 'tomorrow', set due date to tomorrow" : "检测到「明天」，设置截止日期为明日");
+      } else if (lower.includes("后天") || lower.includes("day after tomorrow")) {
         const d = new Date();
         d.setDate(d.getDate() + 2);
         dueDate = d.toISOString().split("T")[0];
-        reasons.push("检测到「后天」，设置截止日期");
+        reasons.push(isEn ? "Detected 'day after tomorrow', set due date" : "检测到「后天」，设置截止日期");
       }
 
-      const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
-      weekdays.forEach((wd, idx) => {
+      const weekdaysZh = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+      const weekdaysEn = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+      const wdList = isEn ? weekdaysEn : weekdaysZh;
+      wdList.forEach((wd, idx) => {
         if (lower.includes(wd)) {
           const d = new Date();
           const current = d.getDay();
@@ -156,7 +158,7 @@ function simulateAIAnalysis(text: string): Promise<{ priority: "high" | "medium"
           if (diff <= 0) diff += 7;
           d.setDate(d.getDate() + diff);
           dueDate = d.toISOString().split("T")[0];
-          reasons.push(`检测到「${wd}」，推算截止日期`);
+          reasons.push(isEn ? `Detected '${wd}', calculated due date` : `检测到「${wd}」，推算截止日期`);
         }
       });
 
@@ -166,7 +168,7 @@ function simulateAIAnalysis(text: string): Promise<{ priority: "high" | "medium"
         color,
         dueDate,
         dueTime,
-        reasoning: reasons.join("；"),
+        reasoning: reasons.join(isEn ? "; " : "；"),
       });
     }, 800 + Math.random() * 600);
   });
@@ -224,7 +226,7 @@ export function AddTaskModal({ open, onClose, onSubmit, initialText = "" }: AddT
     setAiReasoning("");
     setAiApplied(false);
     try {
-      const result = await simulateAIAnalysis(text);
+      const result = await simulateAIAnalysis(text, isEn);
       setPriority(result.priority);
       setCategory(result.category);
       setColor(result.color);

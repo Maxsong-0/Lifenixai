@@ -52,47 +52,47 @@ interface AddEventModalProps {
 }
 
 /* ═══════════════ Config ═══════════════ */
-const priorities: { key: Priority; label: string; desc: string; dot: string; border: string }[] = [
-  { key: "urgent", label: "紧急", desc: "立即处理", dot: "bg-red-500", border: "border-red-300 bg-red-50 text-red-700" },
-  { key: "high", label: "高", desc: "优先完成", dot: "bg-orange-500", border: "border-orange-300 bg-orange-50 text-orange-700" },
-  { key: "medium", label: "中", desc: "正常排期", dot: "bg-blue-500", border: "border-blue-300 bg-blue-50 text-blue-700" },
-  { key: "low", label: "低", desc: "有空再做", dot: "bg-gray-400", border: "border-gray-300 bg-gray-50 text-gray-600" },
+const priorityTplKeys: { key: Priority; labelZh: string; labelEn: string; descZh: string; descEn: string; dot: string; border: string }[] = [
+  { key: "urgent", labelZh: "紧急", labelEn: "Urgent", descZh: "立即处理", descEn: "Handle now", dot: "bg-red-500", border: "border-red-300 bg-red-50 text-red-700" },
+  { key: "high", labelZh: "高", labelEn: "High", descZh: "优先完成", descEn: "Do first", dot: "bg-orange-500", border: "border-orange-300 bg-orange-50 text-orange-700" },
+  { key: "medium", labelZh: "中", labelEn: "Medium", descZh: "正常排期", descEn: "Normal schedule", dot: "bg-blue-500", border: "border-blue-300 bg-blue-50 text-blue-700" },
+  { key: "low", labelZh: "低", labelEn: "Low", descZh: "有空再做", descEn: "When free", dot: "bg-gray-400", border: "border-gray-300 bg-gray-50 text-gray-600" },
 ];
 
-const categories = [
-  { key: "工作", emoji: "💼" },
-  { key: "会议", emoji: "📅" },
-  { key: "开发", emoji: "💻" },
-  { key: "设计", emoji: "🎨" },
-  { key: "健康", emoji: "🏃" },
-  { key: "学习", emoji: "📚" },
-  { key: "生活", emoji: "🏠" },
-  { key: "社交", emoji: "👥" },
-  { key: "其他", emoji: "📌" },
+const categoryTplKeys = [
+  { zhKey: "工作", enKey: "Work", emoji: "💼" },
+  { zhKey: "会议", enKey: "Meeting", emoji: "📅" },
+  { zhKey: "开发", enKey: "Dev", emoji: "💻" },
+  { zhKey: "设计", enKey: "Design", emoji: "🎨" },
+  { zhKey: "健康", enKey: "Health", emoji: "🏃" },
+  { zhKey: "学习", enKey: "Learning", emoji: "📚" },
+  { zhKey: "生活", enKey: "Life", emoji: "🏠" },
+  { zhKey: "社交", enKey: "Social", emoji: "👥" },
+  { zhKey: "其他", enKey: "Other", emoji: "📌" },
 ];
 
-const colorTags = [
-  { key: "bg-blue-500", label: "蓝色", ring: "ring-blue-300", text: "text-blue-500" },
-  { key: "bg-purple-500", label: "紫色", ring: "ring-purple-300", text: "text-purple-500" },
-  { key: "bg-cyan-500", label: "青色", ring: "ring-cyan-300", text: "text-cyan-500" },
-  { key: "bg-emerald-500", label: "绿色", ring: "ring-emerald-300", text: "text-emerald-500" },
-  { key: "bg-amber-500", label: "琥珀", ring: "ring-amber-300", text: "text-amber-500" },
-  { key: "bg-rose-500", label: "玫红", ring: "ring-rose-300", text: "text-rose-500" },
-  { key: "bg-indigo-500", label: "靛蓝", ring: "ring-indigo-300", text: "text-indigo-500" },
-  { key: "bg-pink-500", label: "粉色", ring: "ring-pink-300", text: "text-pink-500" },
-  { key: "bg-teal-500", label: "蓝绿", ring: "ring-teal-300", text: "text-teal-500" },
-  { key: "bg-orange-500", label: "橙色", ring: "ring-orange-300", text: "text-orange-500" },
+const colorTagTplKeys = [
+  { key: "bg-blue-500", labelZh: "蓝色", labelEn: "Blue", ring: "ring-blue-300", text: "text-blue-500" },
+  { key: "bg-purple-500", labelZh: "紫色", labelEn: "Purple", ring: "ring-purple-300", text: "text-purple-500" },
+  { key: "bg-cyan-500", labelZh: "青色", labelEn: "Cyan", ring: "ring-cyan-300", text: "text-cyan-500" },
+  { key: "bg-emerald-500", labelZh: "绿色", labelEn: "Green", ring: "ring-emerald-300", text: "text-emerald-500" },
+  { key: "bg-amber-500", labelZh: "琥珀", labelEn: "Amber", ring: "ring-amber-300", text: "text-amber-500" },
+  { key: "bg-rose-500", labelZh: "玫红", labelEn: "Rose", ring: "ring-rose-300", text: "text-rose-500" },
+  { key: "bg-indigo-500", labelZh: "靛蓝", labelEn: "Indigo", ring: "ring-indigo-300", text: "text-indigo-500" },
+  { key: "bg-pink-500", labelZh: "粉色", labelEn: "Pink", ring: "ring-pink-300", text: "text-pink-500" },
+  { key: "bg-teal-500", labelZh: "蓝绿", labelEn: "Teal", ring: "ring-teal-300", text: "text-teal-500" },
+  { key: "bg-orange-500", labelZh: "橙色", labelEn: "Orange", ring: "ring-orange-300", text: "text-orange-500" },
 ];
 
-const durations = [
-  { value: 0.25, label: "15分钟" },
-  { value: 0.5, label: "30分钟" },
-  { value: 0.75, label: "45分钟" },
-  { value: 1, label: "1小时" },
-  { value: 1.5, label: "1.5小时" },
-  { value: 2, label: "2小时" },
-  { value: 3, label: "3小时" },
-  { value: 4, label: "4小时" },
+const durationTplKeys = [
+  { value: 0.25, labelZh: "15分钟", labelEn: "15 min" },
+  { value: 0.5, labelZh: "30分钟", labelEn: "30 min" },
+  { value: 0.75, labelZh: "45分钟", labelEn: "45 min" },
+  { value: 1, labelZh: "1小时", labelEn: "1 hour" },
+  { value: 1.5, labelZh: "1.5小时", labelEn: "1.5 hours" },
+  { value: 2, labelZh: "2小时", labelEn: "2 hours" },
+  { value: 3, labelZh: "3小时", labelEn: "3 hours" },
+  { value: 4, labelZh: "4小时", labelEn: "4 hours" },
 ];
 
 const hourOptions = Array.from({ length: 30 }, (_, i) => {
@@ -348,10 +348,10 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
   };
 
   const fmtH = (h: number) => `${Math.floor(h).toString().padStart(2, "0")}:${h % 1 === 0 ? "00" : "30"}`;
-  const selectedColor = colorTags.find((c) => c.key === color);
-  const selectedCat = categories.find((c) => c.key === category);
-  const selectedDuration = durations.find((d) => d.value === duration);
-  const presetLabel = preset?.date ? `${format(preset.date, "M月d日", { locale: zhCN })} ${fmtH(preset.startHour ?? 9)}` : null;
+  const selectedColor = colorTagTplKeys.find((c) => c.key === color);
+  const selectedCat = categoryTplKeys.find((c) => (isEn ? c.enKey : c.zhKey) === category);
+  const selectedDuration = durationTplKeys.find((d) => d.value === duration);
+  const presetLabel = preset?.date ? `${format(preset.date, isEn ? "MMM d" : "M月d日", { locale: fnsLocale })} ${fmtH(preset.startHour ?? 9)}` : null;
 
   if (!open) return null;
 
@@ -381,9 +381,9 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                   <Calendar className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-[1rem]" style={{ fontWeight: 600 }}>新建日程</h3>
+                  <h3 className="text-[1rem]" style={{ fontWeight: 600 }}>{isEn ? "New Event" : "新建日程"}</h3>
                   {presetLabel && (
-                    <p className="text-[0.625rem] text-primary">{presetLabel} · 从日历创建</p>
+                    <p className="text-[0.625rem] text-primary">{presetLabel} · {isEn ? "From calendar" : "从日历创建"}</p>
                   )}
                 </div>
               </div>
@@ -401,13 +401,13 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4" onClick={(e) => e.stopPropagation()}>
               {/* Title */}
               <div>
-                <label className="text-[0.6875rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>日程标题（支持自然语言）</label>
+                <label className="text-[0.6875rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>{isEn ? "Event title (natural language supported)" : "日程标题（支持自然语言）"}</label>
                 <div className="relative">
                   <Input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSubmit()}
-                    placeholder="例：明天下午两点半 会议室A 团队周会 1.5小时"
+                    placeholder={isEn ? "e.g.: Tomorrow 2:30pm Room A team meeting 1.5h" : "例：明天下午两点半 会议室A 团队周会 1.5小时"}
                     className="rounded-xl text-[0.9375rem] pr-10"
                     autoFocus
                   />
@@ -416,9 +416,9 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                 {aiEnabled && title.trim().length > 0 && (
                   <div className="mt-1.5 flex items-center gap-1.5">
                     {aiAnalyzing ? (
-                      <span className="flex items-center gap-1 text-[0.5625rem] text-primary"><Loader2 className="h-3 w-3 animate-spin" />AI 正在分析…</span>
+                      <span className="flex items-center gap-1 text-[0.5625rem] text-primary"><Loader2 className="h-3 w-3 animate-spin" />{isEn ? "AI analyzing..." : "AI 正在分析…"}</span>
                     ) : aiApplied ? (
-                      <span className="flex items-center gap-1 text-[0.5625rem] text-emerald-600"><Check className="h-3 w-3" />AI 已自动填充</span>
+                      <span className="flex items-center gap-1 text-[0.5625rem] text-emerald-600"><Check className="h-3 w-3" />{isEn ? "AI auto-filled" : "AI 已自动填充"}</span>
                     ) : null}
                   </div>
                 )}
@@ -429,7 +429,7 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                 {/* Date */}
                 <div>
                   <label className="text-[0.6875rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>
-                    日期 {aiApplied && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
+                    {isEn ? "Date" : "日期"} {aiApplied && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
                   </label>
                   <div className="relative">
                     <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
@@ -444,7 +444,7 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                 {/* Start time */}
                 <div className="relative">
                   <label className="text-[0.6875rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>
-                    开始 {aiApplied && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
+                    {isEn ? "Start" : "开始"} {aiApplied && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
                   </label>
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowStartHour(!showStartHour); setShowDuration(false); setShowColors(false); setShowCategories(false); }}
@@ -481,13 +481,13 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                 {/* Duration */}
                 <div className="relative">
                   <label className="text-[0.6875rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>
-                    时长 {aiApplied && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
+                    {isEn ? "Duration" : "时长"} {aiApplied && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
                   </label>
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowDuration(!showDuration); setShowStartHour(false); setShowColors(false); setShowCategories(false); }}
                     className="flex w-full items-center gap-1.5 rounded-xl border border-border/40 px-2.5 py-2 text-[0.75rem] hover:border-border/60 transition-colors"
                   >
-                    <span className="flex-1 text-left">{selectedDuration?.label || `${duration}h`}</span>
+                    <span className="flex-1 text-left">{selectedDuration ? (isEn ? selectedDuration.labelEn : selectedDuration.labelZh) : `${duration}h`}</span>
                     <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${showDuration ? "rotate-180" : ""}`} />
                   </button>
                   <AnimatePresence>
@@ -499,14 +499,14 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                         onClick={(e) => e.stopPropagation()}
                         className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-border/50 bg-card py-1 shadow-lg"
                       >
-                        {durations.map((d) => (
+                        {durationTplKeys.map((d) => (
                           <button
                             key={d.value}
                             onClick={() => { setDuration(d.value); setShowDuration(false); }}
                             className={`flex w-full items-center px-3 py-1.5 text-[0.75rem] hover:bg-muted/40 transition-colors ${duration === d.value ? "bg-primary/5 text-primary" : ""}`}
                             style={{ fontWeight: duration === d.value ? 600 : 400 }}
                           >
-                            {d.label}
+                            {isEn ? d.labelEn : d.labelZh}
                             {duration === d.value && <Check className="h-3 w-3 ml-auto" />}
                           </button>
                         ))}
@@ -520,26 +520,26 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
               <div className="rounded-xl bg-muted/20 border border-border/20 px-3 py-2 flex items-center gap-3">
                 <div className={`w-1 self-stretch rounded-full ${color}`} />
                 <div className="flex-1 min-w-0">
-                  <div className="text-[0.75rem] truncate" style={{ fontWeight: 500 }}>{title || "日程标题"}</div>
+                  <div className="text-[0.75rem] truncate" style={{ fontWeight: 500 }}>{title || (isEn ? "Event title" : "日程标题")}</div>
                   <div className="text-[0.625rem] text-muted-foreground flex items-center gap-2 flex-wrap">
-                    <span>{format(new Date(date + "T00:00:00"), "M月d日 EEE", { locale: zhCN })}</span>
+                    <span>{format(new Date(date + "T00:00:00"), isEn ? "MMM d EEE" : "M月d日 EEE", { locale: fnsLocale })}</span>
                     <span>{fmtH(startHour)} – {fmtH(startHour + duration)}</span>
-                    <span>{selectedDuration?.label || `${duration}h`}</span>
+                    <span>{selectedDuration ? (isEn ? selectedDuration.labelEn : selectedDuration.labelZh) : `${duration}h`}</span>
                     {location && <span>📍{location}</span>}
                   </div>
                 </div>
-                <Badge className={`${priorities.find((p) => p.key === priority)?.border} text-[0.5rem] h-4 px-1.5 border`}>
-                  {priorities.find((p) => p.key === priority)?.label}
+                <Badge className={`${priorityTplKeys.find((p) => p.key === priority)?.border} text-[0.5rem] h-4 px-1.5 border`}>
+                  {isEn ? priorityTplKeys.find((p) => p.key === priority)?.labelEn : priorityTplKeys.find((p) => p.key === priority)?.labelZh}
                 </Badge>
               </div>
 
               {/* Priority */}
               <div>
                 <label className="text-[0.6875rem] text-muted-foreground mb-2 block" style={{ fontWeight: 500 }}>
-                  优先级 {aiApplied && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
+                  {isEn ? "Priority" : "优先级"} {aiApplied && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
                 </label>
                 <div className="grid grid-cols-4 gap-1.5">
-                  {priorities.map((p) => (
+                  {priorityTplKeys.map((p) => (
                     <button
                       key={p.key}
                       onClick={() => setPriority(p.key)}
@@ -548,8 +548,8 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                       }`}
                     >
                       <div className={`h-2 w-2 rounded-full ${p.dot}`} />
-                      <span className="text-[0.6875rem]" style={{ fontWeight: priority === p.key ? 600 : 400 }}>{p.label}</span>
-                      <span className="text-[0.5rem] text-muted-foreground">{p.desc}</span>
+                      <span className="text-[0.6875rem]" style={{ fontWeight: priority === p.key ? 600 : 400 }}>{isEn ? p.labelEn : p.labelZh}</span>
+                      <span className="text-[0.5rem] text-muted-foreground">{isEn ? p.descEn : p.descZh}</span>
                       {priority === p.key && (
                         <motion.div layoutId="prio-check-ev" className="absolute top-1 right-1">
                           <Check className="h-2.5 w-2.5" />
@@ -565,14 +565,14 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                 {/* Color */}
                 <div className="relative">
                   <label className="text-[0.6875rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>
-                    颜色 {aiApplied && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
+                    {isEn ? "Color" : "颜色"} {aiApplied && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
                   </label>
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowColors(!showColors); setShowCategories(false); setShowStartHour(false); setShowDuration(false); }}
                     className="flex w-full items-center gap-2 rounded-xl border border-border/40 px-3 py-2 hover:border-border/60 transition-colors"
                   >
                     <div className={`h-4 w-4 rounded-full ${color}`} />
-                    <span className="text-[0.75rem] flex-1 text-left">{selectedColor?.label || "选择"}</span>
+                    <span className="text-[0.75rem] flex-1 text-left">{selectedColor ? (isEn ? selectedColor.labelEn : selectedColor.labelZh) : (isEn ? "Select" : "选择")}</span>
                     <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${showColors ? "rotate-180" : ""}`} />
                   </button>
                   <AnimatePresence>
@@ -585,10 +585,10 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                         className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-border/50 bg-card p-2 shadow-lg"
                       >
                         <div className="grid grid-cols-5 gap-1.5">
-                          {colorTags.map((c) => (
+                          {colorTagTplKeys.map((c) => (
                             <button key={c.key} onClick={() => { setColor(c.key); setShowColors(false); }} className={`flex flex-col items-center gap-0.5 rounded-lg p-1.5 transition-all hover:bg-muted/40 ${color === c.key ? "bg-muted/60 ring-2 " + c.ring : ""}`}>
                               <div className={`h-5 w-5 rounded-full ${c.key}`} />
-                              <span className="text-[0.5rem] text-muted-foreground">{c.label}</span>
+                              <span className="text-[0.5rem] text-muted-foreground">{isEn ? c.labelEn : c.labelZh}</span>
                             </button>
                           ))}
                         </div>
@@ -599,14 +599,14 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                 {/* Category */}
                 <div className="relative">
                   <label className="text-[0.6875rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>
-                    分类 {aiApplied && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
+                    {isEn ? "Category" : "分类"} {aiApplied && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
                   </label>
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowCategories(!showCategories); setShowColors(false); setShowStartHour(false); setShowDuration(false); }}
                     className="flex w-full items-center gap-2 rounded-xl border border-border/40 px-3 py-2 hover:border-border/60 transition-colors"
                   >
                     <span className="text-[0.8125rem]">{selectedCat?.emoji}</span>
-                    <span className="text-[0.75rem] flex-1 text-left">{category}</span>
+                    <span className="text-[0.75rem] flex-1 text-left">{selectedCat ? (isEn ? selectedCat.enKey : selectedCat.zhKey) : category}</span>
                     <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${showCategories ? "rotate-180" : ""}`} />
                   </button>
                   <AnimatePresence>
@@ -618,10 +618,10 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                         onClick={(e) => e.stopPropagation()}
                         className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-border/50 bg-card py-1 shadow-lg max-h-48 overflow-y-auto"
                       >
-                        {categories.map((c) => (
-                          <button key={c.key} onClick={() => { setCategory(c.key); setShowCategories(false); }} className={`flex w-full items-center gap-2 px-3 py-1.5 text-[0.75rem] hover:bg-muted/40 transition-colors ${category === c.key ? "bg-primary/5 text-primary" : ""}`} style={{ fontWeight: category === c.key ? 600 : 400 }}>
-                            <span>{c.emoji}</span>{c.key}
-                            {category === c.key && <Check className="h-3 w-3 ml-auto" />}
+                        {categoryTplKeys.map((c) => (
+                          <button key={c.zhKey} onClick={() => { setCategory(isEn ? c.enKey : c.zhKey); setShowCategories(false); }} className={`flex w-full items-center gap-2 px-3 py-1.5 text-[0.75rem] hover:bg-muted/40 transition-colors ${category === (isEn ? c.enKey : c.zhKey) ? "bg-primary/5 text-primary" : ""}`} style={{ fontWeight: category === (isEn ? c.enKey : c.zhKey) ? 600 : 400 }}>
+                            <span>{c.emoji}</span>{isEn ? c.enKey : c.zhKey}
+                            {category === (isEn ? c.enKey : c.zhKey) && <Check className="h-3 w-3 ml-auto" />}
                           </button>
                         ))}
                       </motion.div>
@@ -636,7 +636,7 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                 className="flex items-center gap-1.5 text-[0.6875rem] text-muted-foreground hover:text-foreground transition-colors w-full"
               >
                 <ChevronDown className={`h-3 w-3 transition-transform ${showAdvanced ? "" : "-rotate-90"}`} />
-                <span style={{ fontWeight: 500 }}>更多选项</span>
+                <span style={{ fontWeight: 500 }}>{isEn ? "More options" : "更多选项"}</span>
                 <div className="flex-1 h-px bg-border/30" />
               </button>
 
@@ -652,14 +652,14 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                     {/* Location */}
                     <div>
                       <label className="text-[0.6875rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>
-                        地点 {aiApplied && location && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
+                        {isEn ? "Location" : "地点"} {aiApplied && location && <span className="text-[0.5rem] text-primary bg-primary/10 rounded-full px-1 py-0.5 ml-1">AI</span>}
                       </label>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                         <Input
                           value={location}
                           onChange={(e) => setLocation(e.target.value)}
-                          placeholder="会议室、线上链接或地址"
+                          placeholder={isEn ? "Room, online link, or address" : "会议室、线上链接或地址"}
                           className="rounded-xl pl-9 text-[0.8125rem]"
                         />
                       </div>
@@ -669,14 +669,14 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                       <div className="flex items-center justify-between rounded-xl border border-border/30 px-3 py-2">
                         <div className="flex items-center gap-2">
                           <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-[0.6875rem]" style={{ fontWeight: 500 }}>循环日程</span>
+                          <span className="text-[0.6875rem]" style={{ fontWeight: 500 }}>{isEn ? "Recurring" : "循环日程"}</span>
                         </div>
                         <Switch checked={isRecurring} onCheckedChange={setIsRecurring} className="scale-75" />
                       </div>
                       <div className="flex items-center justify-between rounded-xl border border-border/30 px-3 py-2">
                         <div className="flex items-center gap-2">
                           <Video className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-[0.6875rem]" style={{ fontWeight: 500 }}>含会议</span>
+                          <span className="text-[0.6875rem]" style={{ fontWeight: 500 }}>{isEn ? "Has meeting" : "含会议"}</span>
                         </div>
                         <Switch checked={hasMeeting} onCheckedChange={setHasMeeting} className="scale-75" />
                       </div>
@@ -697,7 +697,7 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                     <div className="rounded-xl border border-primary/15 bg-gradient-to-r from-primary/5 to-purple-50/30 px-4 py-2.5">
                       <div className="flex items-center gap-1.5 mb-1">
                         <Brain className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-[0.625rem] text-primary" style={{ fontWeight: 600 }}>AI 分析</span>
+                        <span className="text-[0.625rem] text-primary" style={{ fontWeight: 600 }}>{isEn ? "AI Analysis" : "AI 分析"}</span>
                       </div>
                       <p className="text-[0.625rem] text-muted-foreground leading-relaxed">{aiReasoning}</p>
                     </div>
@@ -715,7 +715,7 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
                   className="w-full rounded-xl border-primary/30 text-primary hover:bg-primary/5 gap-1.5 text-[0.75rem]"
                 >
                   {aiAnalyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                  让 AI 帮我智能填充
+                  {isEn ? "Let AI smart-fill" : "让 AI 帮我智能填充"}
                 </Button>
               )}
             </div>
@@ -723,16 +723,16 @@ export function AddEventModal({ open, onClose, onSubmit, preset }: AddEventModal
             {/* Footer */}
             <div className="shrink-0 border-t border-border/50 px-5 py-3 flex items-center justify-between gap-3">
               <p className="text-[0.5rem] text-muted-foreground max-w-[180px]">
-                {aiEnabled ? "AI 自动填充已开启" : "可手动选择或开启 AI"}
+                {aiEnabled ? (isEn ? "AI auto-fill enabled" : "AI 自动填充已开启") : (isEn ? "Manual or enable AI" : "可手动选择或开启 AI")}
               </p>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={onClose} className="rounded-xl text-[0.75rem]">取消</Button>
+                <Button variant="outline" onClick={onClose} className="rounded-xl text-[0.75rem]">{isEn ? "Cancel" : "取消"}</Button>
                 <Button
                   onClick={handleSubmit}
                   disabled={!title.trim()}
                   className="rounded-xl bg-primary text-white hover:bg-primary/90 text-[0.75rem] gap-1 disabled:opacity-40"
                 >
-                  创建日程
+                  {isEn ? "Create Event" : "创建日程"}
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </div>

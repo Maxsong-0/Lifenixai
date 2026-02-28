@@ -194,6 +194,9 @@ interface FragmentParserProps {
 }
 
 export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: FragmentParserProps) {
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en-US";
+  const fnsLocale = isEn ? enUSDateFns : zhCN;
   const [mode, setMode] = useState<ParseMode>("chat");
   const [status, setStatus] = useState<ParseStatus>("idle");
   const [parseProgress, setParseProgress] = useState(0);
@@ -370,7 +373,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
     medium: "bg-amber-50 text-amber-600 border-amber-200",
     low: "bg-green-50 text-green-600 border-green-200",
   };
-  const priorityLabels: Record<string, string> = { high: "高", medium: "中", low: "低" };
+  const priorityLabels: Record<string, string> = { high: isEn ? "High" : "高", medium: isEn ? "Med" : "中", low: isEn ? "Low" : "低" };
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -407,10 +410,10 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                 </div>
                 <div>
                   <h2 className="text-[1rem] sm:text-[1.125rem]" style={{ fontWeight: 600 }}>
-                    碎片信息解析
+                    {isEn ? "Fragment Parser" : "碎片信息解析"}
                   </h2>
                   <p className="text-[0.6875rem] sm:text-[0.75rem] text-muted-foreground">
-                    截图识别 · 文档提取 · AI 智能结构化
+                    {isEn ? "Screenshot OCR · Document extraction · AI structuring" : "截图识别 · 文档提取 · AI 智能结构化"}
                   </p>
                 </div>
               </div>
@@ -425,8 +428,8 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
             {/* ───── Mode Tabs ───── */}
             <div className="flex shrink-0 border-b border-border/30 px-4 sm:px-6">
               {[
-                { key: "chat" as ParseMode, label: "聊天截图", icon: MessageSquare, desc: "微信/群聊截图识别" },
-                { key: "document" as ParseMode, label: "文档提取", icon: FileText, desc: "文章/PDF 摘要" },
+                { key: "chat" as ParseMode, label: isEn ? "Chat Screenshot" : "聊天截图", icon: MessageSquare, desc: isEn ? "WeChat / group chat OCR" : "微信/群聊截图识别" },
+                { key: "document" as ParseMode, label: isEn ? "Document Extract" : "文档提取", icon: FileText, desc: isEn ? "Article / PDF summary" : "文章/PDF 摘要" },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -494,12 +497,12 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                             )}
                           </div>
                           <div className="text-[0.875rem] text-foreground mb-1" style={{ fontWeight: 500 }}>
-                            {dragOver ? "松手上传" : mode === "chat" ? "拖拽聊天截图到这里" : "拖拽文档到这里"}
+                            {dragOver ? (isEn ? "Drop to upload" : "松手上传") : mode === "chat" ? (isEn ? "Drag chat screenshot here" : "拖拽聊天截图到这里") : (isEn ? "Drag document here" : "拖拽文档到这里")}
                           </div>
                           <div className="text-[0.75rem] text-muted-foreground">
                             {mode === "chat"
-                              ? "支持 PNG、JPG 格式 · 最大 10MB"
-                              : "支持 PDF、TXT、DOC、MD 格式 · 最大 20MB"}
+                              ? (isEn ? "Supports PNG, JPG · Max 10MB" : "支持 PNG、JPG 格式 · 最大 10MB")
+                              : (isEn ? "Supports PDF, TXT, DOC, MD · Max 20MB" : "支持 PDF、TXT、DOC、MD 格式 · 最大 20MB")}
                           </div>
                           <Button
                             variant="outline"
@@ -510,14 +513,14 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                               fileInputRef.current?.click();
                             }}
                           >
-                            <Upload className="h-3 w-3" /> 选择文件
+                            <Upload className="h-3 w-3" /> {isEn ? "Select file" : "选择文件"}
                           </Button>
                         </div>
 
                         {/* Divider */}
                         <div className="flex items-center gap-3">
                           <div className="flex-1 h-px bg-border/40" />
-                          <span className="text-[0.6875rem] text-muted-foreground/60">或者</span>
+                          <span className="text-[0.6875rem] text-muted-foreground/60">{isEn ? "or" : "或者"}</span>
                           <div className="flex-1 h-px bg-border/40" />
                         </div>
 
@@ -525,14 +528,14 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <label className="text-[0.8125rem] text-foreground" style={{ fontWeight: 500 }}>
-                              {mode === "chat" ? "粘贴聊天记录文本" : "粘贴文章内容"}
+                              {mode === "chat" ? (isEn ? "Paste chat text" : "粘贴聊天记录文本") : (isEn ? "Paste article content" : "粘贴文章内容")}
                             </label>
                             <button
                               onClick={handleUseSample}
                               className="text-[0.6875rem] text-primary hover:text-primary/80 transition-colors"
                               style={{ fontWeight: 500 }}
                             >
-                              使用示例文本
+                              {isEn ? "Use sample text" : "使用示例文本"}
                             </button>
                           </div>
                           <textarea
@@ -540,8 +543,8 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                             onChange={(e) => setPastedText(e.target.value)}
                             placeholder={
                               mode === "chat"
-                                ? "将微信聊天记录、群接龙等文本粘贴到这里..."
-                                : "将文章内容、会议纪要等文本粘贴到这里..."
+                                ? (isEn ? "Paste WeChat chat logs, group messages here..." : "将微信聊天记录、群接龙等文本粘贴到这里...")
+                                : (isEn ? "Paste article content, meeting notes here..." : "将文章内容、会议纪要等文本粘贴到这里...")
                             }
                             className="w-full h-36 rounded-xl border border-border/50 bg-muted/10 p-3 text-[0.8125rem] placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 resize-none transition-all"
                           />
@@ -554,7 +557,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                                 onClick={handlePasteAndParse}
                                 className="w-full rounded-xl bg-primary text-white hover:bg-primary/90 gap-2"
                               >
-                                <Sparkles className="h-3.5 w-3.5" /> AI 解析
+                                <Sparkles className="h-3.5 w-3.5" /> {isEn ? "AI Parse" : "AI 解析"}
                               </Button>
                             </motion.div>
                           )}
@@ -611,12 +614,12 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                         </div>
 
                         <div className="text-[0.9375rem] text-foreground mb-1" style={{ fontWeight: 600 }}>
-                          {status === "uploading" ? "正在上传..." : "AI 正在解析中"}
+                          {status === "uploading" ? (isEn ? "Uploading..." : "正在上传...") : (isEn ? "AI parsing..." : "AI 正在解析中")}
                         </div>
                         <p className="text-[0.75rem] text-muted-foreground mb-4">
                           {mode === "chat"
-                            ? "识别时间、地点、人物信息"
-                            : "提取摘要和可执行任务"}
+                            ? (isEn ? "Recognizing time, location, people" : "识别时间、地点、人物信息")
+                            : (isEn ? "Extracting summary and action items" : "提取摘要和可执行任务")}
                         </p>
 
                         <div className="w-64 sm:w-80">
@@ -624,14 +627,14 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                           <div className="flex justify-between mt-1.5 text-[0.625rem] text-muted-foreground">
                             <span>
                               {status === "uploading"
-                                ? "上传文件"
+                                ? (isEn ? "Uploading" : "上传文件")
                                 : parseProgress < 40
-                                ? "文字识别"
+                                ? (isEn ? "Text recognition" : "文字识别")
                                 : parseProgress < 70
-                                ? "语义分析"
+                                ? (isEn ? "Semantic analysis" : "语义分析")
                                 : parseProgress < 95
-                                ? "结构化提取"
-                                : "生成结果"}
+                                ? (isEn ? "Structured extraction" : "结构化提取")
+                                : (isEn ? "Generating results" : "生成结果")}
                             </span>
                             <span>{Math.round(parseProgress)}%</span>
                           </div>
@@ -639,7 +642,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
 
                         {/* Step indicators */}
                         <div className="flex items-center gap-2 mt-6">
-                          {["OCR", "NLP", "结构化", "完成"].map((step, i) => {
+                          {["OCR", "NLP", isEn ? "Structure" : "结构化", isEn ? "Done" : "完成"].map((step, i) => {
                             const active =
                               i === 0
                                 ? parseProgress >= 0
@@ -697,10 +700,10 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                       <CircleCheck className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <div className="text-[0.8125rem] text-emerald-700" style={{ fontWeight: 600 }}>
-                          解析完成 · 提取 {chatResults.length} 条日程
+                          {isEn ? `Parsing complete · Extracted ${chatResults.length} events` : `解析完成 · 提取 ${chatResults.length} 条日程`}
                         </div>
                         <p className="text-[0.75rem] text-emerald-600/70 mt-0.5">
-                          已从聊天记录中识别出以下时间、地点和人物信息。
+                          {isEn ? "Identified the following time, location and people info from the chat." : "已从聊天记录中识别出以下时间、地点和人物信息。"}
                         </p>
                       </div>
                       <Button
@@ -709,7 +712,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                         disabled={chatResults.every((r) => r.added)}
                         className="rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-[0.6875rem] h-7 gap-1 shrink-0"
                       >
-                        <Plus className="h-3 w-3" /> 全部加入
+                        <Plus className="h-3 w-3" /> {isEn ? "Add all" : "全部加入"}
                       </Button>
                     </div>
 
@@ -739,7 +742,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                           </div>
                           {result.added ? (
                             <Badge className="bg-emerald-100 text-emerald-600 text-[0.5625rem] gap-0.5 shrink-0">
-                              <CircleCheck className="h-2.5 w-2.5" /> 已加入
+                              <CircleCheck className="h-2.5 w-2.5" /> {isEn ? "Added" : "已加入"}
                             </Badge>
                           ) : (
                             <Button
@@ -747,7 +750,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                               onClick={() => toggleScheduleAdded(result.id)}
                               className="rounded-lg bg-primary text-white hover:bg-primary/90 text-[0.6875rem] h-7 gap-1 shrink-0"
                             >
-                              <Plus className="h-3 w-3" /> 加入日程
+                              <Plus className="h-3 w-3" /> {isEn ? "Add to schedule" : "加入日程"}
                             </Button>
                           )}
                         </div>
@@ -762,12 +765,12 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                               </div>
                               <div className="flex-1">
                                 <div className="text-[0.8125rem]" style={{ fontWeight: 500 }}>
-                                  {format(t.date, "M月d日 EEEE", { locale: zhCN })}
+                                  {format(t.date, isEn ? "MMM d EEEE" : "M月d日 EEEE", { locale: fnsLocale })}
                                   {t.startTime && ` · ${t.startTime}`}
                                   {t.endTime && ` – ${t.endTime}`}
                                 </div>
                                 <div className="text-[0.625rem] text-muted-foreground">
-                                  原文：「{t.text}」 · 置信度 {Math.round(t.confidence * 100)}%
+                                  {isEn ? `Source: "${t.text}" · Confidence ${Math.round(t.confidence * 100)}%` : `原文：「${t.text}」 · 置信度 ${Math.round(t.confidence * 100)}%`}
                                 </div>
                               </div>
                               <div
@@ -815,7 +818,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                                         variant="secondary"
                                         className="ml-1.5 text-[0.5rem] px-1"
                                       >
-                                        {l.type === "online" ? "线上" : "线下"}
+                                        {l.type === "online" ? (isEn ? "Online" : "线上") : (isEn ? "Offline" : "线下")}
                                       </Badge>
                                     )}
                                   </span>
@@ -832,7 +835,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                       onClick={resetState}
                       className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-border/50 py-3 text-[0.8125rem] text-muted-foreground hover:text-foreground hover:border-border transition-colors"
                     >
-                      <Plus className="h-3.5 w-3.5" /> 继续解析新内容
+                      <Plus className="h-3.5 w-3.5" /> {isEn ? "Parse more content" : "继续解析新内容"}
                     </button>
                   </motion.div>
                 )}
@@ -855,7 +858,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                           </span>
                         </div>
                         <div className="flex items-center gap-3 mt-1 text-[0.6875rem] text-muted-foreground">
-                          <span>{docResult.wordCount.toLocaleString()} 字</span>
+                          <span>{docResult.wordCount.toLocaleString()} {isEn ? "words" : "字"}</span>
                           <span>·</span>
                           <span>{docResult.readingTime}</span>
                         </div>
@@ -865,7 +868,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                       <div className="px-3 sm:px-4 py-3 space-y-3">
                         <div>
                           <div className="flex items-center gap-1.5 text-[0.75rem] text-primary mb-1.5" style={{ fontWeight: 600 }}>
-                            <Sparkles className="h-3 w-3" /> AI 摘要
+                            <Sparkles className="h-3 w-3" /> {isEn ? "AI Summary" : "AI 摘要"}
                           </div>
                           <p className="text-[0.8125rem] text-foreground leading-relaxed">
                             {docResult.summary}
@@ -874,7 +877,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
 
                         <div>
                           <div className="flex items-center gap-1.5 text-[0.75rem] text-foreground mb-2" style={{ fontWeight: 600 }}>
-                            <Tag className="h-3 w-3 text-muted-foreground" /> 关键要点
+                            <Tag className="h-3 w-3 text-muted-foreground" /> {isEn ? "Key Points" : "关键要点"}
                           </div>
                           <div className="space-y-1.5">
                             {docResult.keyPoints.map((point, i) => (
@@ -902,10 +905,10 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                         <div className="flex items-center gap-2">
                           <ListTodo className="h-4 w-4 text-amber-600" />
                           <span className="text-[0.875rem]" style={{ fontWeight: 600 }}>
-                            提取的待办事项
+                            {isEn ? "Extracted Action Items" : "提取的待办事项"}
                           </span>
                           <Badge variant="secondary" className="text-[0.5625rem]">
-                            {docResult.actionItems.length} 项
+                            {docResult.actionItems.length} {isEn ? "items" : "项"}
                           </Badge>
                         </div>
                         <Button
@@ -914,7 +917,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                           disabled={docResult.actionItems.every((a) => a.added)}
                           className="rounded-lg bg-primary text-white hover:bg-primary/90 text-[0.6875rem] h-7 gap-1"
                         >
-                          <Plus className="h-3 w-3" /> 全部加入
+                          <Plus className="h-3 w-3" /> {isEn ? "Add all" : "全部加入"}
                         </Button>
                       </div>
 
@@ -959,7 +962,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                             {/* Add button */}
                             {item.added ? (
                               <Badge className="bg-emerald-100 text-emerald-600 text-[0.5625rem] gap-0.5 shrink-0">
-                                <CircleCheck className="h-2.5 w-2.5" /> 已加入
+                                <CircleCheck className="h-2.5 w-2.5" /> {isEn ? "Added" : "已加入"}
                               </Badge>
                             ) : (
                               <button
@@ -967,7 +970,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                                 className="flex items-center gap-1 rounded-lg bg-primary/10 text-primary px-2 py-1 text-[0.6875rem] hover:bg-primary/20 transition-colors shrink-0"
                                 style={{ fontWeight: 500 }}
                               >
-                                <Plus className="h-3 w-3" /> 加入
+                                <Plus className="h-3 w-3" /> {isEn ? "Add" : "加入"}
                               </button>
                             )}
                           </motion.div>
@@ -980,7 +983,7 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                       onClick={resetState}
                       className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-border/50 py-3 text-[0.8125rem] text-muted-foreground hover:text-foreground hover:border-border transition-colors"
                     >
-                      <Plus className="h-3.5 w-3.5" /> 继续解析新内容
+                      <Plus className="h-3.5 w-3.5" /> {isEn ? "Parse more content" : "继续解析新内容"}
                     </button>
                   </motion.div>
                 )}
@@ -997,16 +1000,16 @@ export function FragmentParser({ open, onClose, onAddSchedule, onAddTask }: Frag
                       <CircleAlert className="h-7 w-7 text-red-500" />
                     </div>
                     <div className="text-[0.9375rem] text-foreground" style={{ fontWeight: 600 }}>
-                      解析失败
+                      {isEn ? "Parse Failed" : "解析失败"}
                     </div>
                     <p className="text-[0.8125rem] text-muted-foreground mt-1.5 max-w-xs">
-                      无法识别文件内容，请检查文件格式或尝试粘贴文本。
+                      {isEn ? "Unable to recognize file content. Please check the format or try pasting text." : "无法识别文件内容，请检查文件格式或尝试粘贴文本。"}
                     </p>
                     <Button
                       onClick={resetState}
                       className="mt-4 rounded-xl bg-primary text-white hover:bg-primary/90"
                     >
-                      重新上传
+                      {isEn ? "Re-upload" : "重新上传"}
                     </Button>
                   </motion.div>
                 )}

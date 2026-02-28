@@ -100,14 +100,6 @@ interface Circle {
 type CircleView = "chat" | "tasks" | "schedule" | "memory" | "members";
 
 /* ═══════════════ Mock Data ═══════════════ */
-const memoryCategories = [
-  { key: "general", label: "通用", icon: Lightbulb, color: "text-amber-600 bg-amber-50" },
-  { key: "password", label: "密码/账号", icon: Lock, color: "text-red-600 bg-red-50" },
-  { key: "preference", label: "偏好/忌口", icon: Star, color: "text-purple-600 bg-purple-50" },
-  { key: "location", label: "位置/地点", icon: Home, color: "text-blue-600 bg-blue-50" },
-  { key: "contact", label: "联系方式", icon: AtSign, color: "text-emerald-600 bg-emerald-50" },
-];
-
 const defaultCircles: Circle[] = [
   {
     id: "c1",
@@ -182,6 +174,8 @@ const defaultCircles: Circle[] = [
 /* ═══════════════ Component ═══════════════ */
 export function CirclesPage() {
   const { user } = useAuth();
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en-US";
 
   // Circle state
   const [circles, setCircles] = useState<Circle[]>(() => {
@@ -238,10 +232,10 @@ export function CirclesPage() {
     const newMsg: GroupMessage = {
       id: `msg-${Date.now()}`,
       senderId: "m1",
-      senderName: user?.name || "我",
+      senderName: user?.name || (isEn ? "Me" : "我"),
       isAI: false,
       content: chatInput.trim(),
-      time: new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }),
+      time: new Date().toLocaleTimeString(isEn ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" }),
       type: "text",
     };
     setCircles((prev) =>
@@ -255,20 +249,24 @@ export function CirclesPage() {
       setTimeout(() => {
         const aiResponses = [
           {
-            content: `根据共享知识库的信息，我来帮大家整理一下：\n\n${selectedCircle.memories.slice(0, 2).map((m) => `• ${m.content}`).join("\n")}`,
+            content: isEn
+              ? `Based on the shared knowledge base, let me organize this:\n\n${selectedCircle.memories.slice(0, 2).map((m) => `• ${m.content}`).join("\n")}`
+              : `根据共享知识库的信息，我来帮大家整理一下：\n\n${selectedCircle.memories.slice(0, 2).map((m) => `• ${m.content}`).join("\n")}`,
             type: "ai-insight" as const,
             actionItems: undefined,
           },
           {
-            content: "我从对话中发现了一些可以落实的行动点：",
+            content: isEn ? "I found some actionable items from the conversation:" : "我从对话中发现了一些可以落实的行动点：",
             type: "ai-action" as const,
             actionItems: [
-              { id: `act-${Date.now()}-1`, text: "创建共享日程：本周末团队活动", accepted: false },
-              { id: `act-${Date.now()}-2`, text: "提醒全员查看最新更新", accepted: false },
+              { id: `act-${Date.now()}-1`, text: isEn ? "Create shared event: Weekend team activity" : "创建共享日程：本周末团队活动", accepted: false },
+              { id: `act-${Date.now()}-2`, text: isEn ? "Remind everyone to check latest updates" : "提醒全员查看最新更新", accepted: false },
             ],
           },
           {
-            content: `好的，我注意到了。我已将这条信息记录到团队上下文中，后续有人问到相关问题时，我会自动引用这条信息来回答。`,
+            content: isEn
+              ? "Got it. I've recorded this into the team context. When someone asks related questions later, I'll automatically reference this info."
+              : "好的，我注意到了。我已将这条信息记录到团队上下文中，后续有人问到相关问题时，我会自动引用这条信息来回答。",
             type: "ai-insight" as const,
             actionItems: undefined,
           },
@@ -280,7 +278,7 @@ export function CirclesPage() {
           senderName: "Lifenix AI",
           isAI: true,
           content: resp.content,
-          time: new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }),
+          time: new Date().toLocaleTimeString(isEn ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" }),
           type: resp.type,
           actionItems: resp.actionItems,
         };
@@ -298,7 +296,7 @@ export function CirclesPage() {
       id: `mem-${Date.now()}`,
       content: newMemory.trim(),
       category: newMemoryCategory,
-      addedBy: user?.name || "我",
+      addedBy: user?.name || (isEn ? "Me" : "我"),
       createdAt: new Date().toISOString(),
       pinned: false,
     };
@@ -360,7 +358,7 @@ export function CirclesPage() {
       createdAt: new Date().toISOString(),
       aiEnabled: true,
       members: [
-        { id: "m1", name: user?.name || "我", email: user?.email || "", role: "owner", online: true, avatar: user?.name?.charAt(0) || "我" },
+        { id: "m1", name: user?.name || (isEn ? "Me" : "我"), email: user?.email || "", role: "owner", online: true, avatar: user?.name?.charAt(0) || (isEn ? "M" : "我") },
       ],
       memories: [],
       messages: [
@@ -369,8 +367,10 @@ export function CirclesPage() {
           senderId: "ai",
           senderName: "Lifenix AI",
           isAI: true,
-          content: `欢迎来到「${createName.trim()}」！🎉\n\n我是你们的 AI 助手，我会：\n• 记住大家录入的共享信息\n• 在聊天中自动引用相关知识\n• 帮助提取行动项和生成日程\n\n快邀请成员加入，开始协作吧！`,
-          time: new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }),
+          content: isEn
+            ? `Welcome to "${createName.trim()}"! 🎉\n\nI'm your AI assistant. I will:\n• Remember shared info from all members\n• Auto-reference relevant knowledge in chats\n• Help extract action items and create events\n\nInvite members and start collaborating!`
+            : `欢迎来到「${createName.trim()}」！🎉\n\n我是你们的 AI 助手，我会：\n• 记住大家录入的共享信息\n• 在聊天中自动引用相关知识\n• 帮助提取行动项和生成日程\n\n快邀请成员加入，开始协作吧！`,
+          time: new Date().toLocaleTimeString(isEn ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" }),
           type: "ai-insight",
         },
       ],
@@ -415,20 +415,28 @@ export function CirclesPage() {
   const pinnedMemories = filteredMemories.filter((m) => m.pinned);
   const unpinnedMemories = filteredMemories.filter((m) => !m.pinned);
 
+  const memoryCategories = [
+    { key: "general", label: t("circles.memCat.general"), icon: Lightbulb, color: "text-amber-600 bg-amber-50" },
+    { key: "password", label: t("circles.memCat.password"), icon: Lock, color: "text-red-600 bg-red-50" },
+    { key: "preference", label: t("circles.memCat.preference"), icon: Star, color: "text-purple-600 bg-purple-50" },
+    { key: "location", label: t("circles.memCat.location"), icon: Home, color: "text-blue-600 bg-blue-50" },
+    { key: "contact", label: t("circles.memCat.contact"), icon: AtSign, color: "text-emerald-600 bg-emerald-50" },
+  ];
+
   const typeConfig = {
-    family: { label: "家庭", icon: Home, color: "text-rose-600 bg-rose-50" },
-    team: { label: "团队", icon: Briefcase, color: "text-blue-600 bg-blue-50" },
-    project: { label: "项目", icon: FolderOpen, color: "text-emerald-600 bg-emerald-50" },
+    family: { label: t("circles.type.family"), icon: Home, color: "text-rose-600 bg-rose-50" },
+    team: { label: t("circles.type.team"), icon: Briefcase, color: "text-blue-600 bg-blue-50" },
+    project: { label: t("circles.type.project"), icon: FolderOpen, color: "text-emerald-600 bg-emerald-50" },
   };
 
   const emojiOptions = ["🏠", "💼", "🚀", "💡", "🎯", "📚", "🎮", "🏋️", "✈️", "🎵", "🍕", "❤️"];
 
   const viewTabs = [
-    { key: "chat" as CircleView, label: "群聊", icon: MessageSquare },
-    { key: "tasks" as CircleView, label: "任务", icon: ClipboardList },
-    { key: "schedule" as CircleView, label: "日程", icon: Calendar },
-    { key: "memory" as CircleView, label: "知识库", icon: Brain },
-    { key: "members" as CircleView, label: "成员", icon: Users },
+    { key: "chat" as CircleView, label: t("circles.view.chat"), icon: MessageSquare },
+    { key: "tasks" as CircleView, label: t("circles.view.tasks"), icon: ClipboardList },
+    { key: "schedule" as CircleView, label: t("circles.view.schedule"), icon: Calendar },
+    { key: "memory" as CircleView, label: t("circles.view.memory"), icon: Brain },
+    { key: "members" as CircleView, label: t("circles.view.members"), icon: Users },
   ];
 
   return (
@@ -437,7 +445,7 @@ export function CirclesPage() {
       <div className="hidden md:flex w-[280px] shrink-0 flex-col border-r border-border/50 bg-white/80">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
-          <h2 className="text-[0.9375rem]" style={{ fontWeight: 600 }}>协作空间</h2>
+          <h2 className="text-[0.9375rem]" style={{ fontWeight: 600 }}>{t("circles.title")}</h2>
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
@@ -472,7 +480,7 @@ export function CirclesPage() {
                       <tc.icon className="h-2.5 w-2.5" />{tc.label}
                     </span>
                     <span className="text-[0.6875rem] text-muted-foreground">
-                      {onlineCount}/{circle.members.length} 在线
+                      {t("circles.onlineRatio").replace("{online}", String(onlineCount)).replace("{total}", String(circle.members.length))}
                     </span>
                   </div>
                 </div>
@@ -491,10 +499,10 @@ export function CirclesPage() {
           <div className="rounded-xl bg-gradient-to-br from-primary/5 to-purple-50 p-3">
             <div className="flex items-center gap-1.5 text-[0.75rem] text-primary" style={{ fontWeight: 600 }}>
               <Crown className="h-3.5 w-3.5" />
-              Pro 支持无限空间
+              {t("circles.proUnlimited")}
             </div>
             <p className="mt-1 text-[0.6875rem] text-muted-foreground leading-relaxed">
-              免费版最多 2 个空间 · 3 人/空间
+              {t("circles.proFreeLimit")}
             </p>
           </div>
         </div>
@@ -520,7 +528,7 @@ export function CirclesPage() {
                 className="fixed top-0 left-0 right-0 z-40 max-h-[70vh] overflow-y-auto rounded-b-2xl bg-white shadow-xl"
               >
                 <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
-                  <h2 className="text-[0.9375rem]" style={{ fontWeight: 600 }}>选择空间</h2>
+                  <h2 className="text-[0.9375rem]" style={{ fontWeight: 600 }}>{t("circles.selectSpace")}</h2>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => { setShowCreateModal(true); setShowMobileList(false); }}
@@ -548,7 +556,7 @@ export function CirclesPage() {
                           <div className={`text-[0.875rem] ${isActive ? "text-primary" : ""}`} style={{ fontWeight: isActive ? 600 : 500 }}>{circle.name}</div>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className={`text-[0.6875rem] ${tc.color} rounded-md px-1.5 py-0.5`}>{tc.label}</span>
-                            <span className="text-[0.6875rem] text-muted-foreground">{circle.members.length} 人</span>
+                            <span className="text-[0.6875rem] text-muted-foreground">{circle.members.length} {t("circles.persons")}</span>
                           </div>
                         </div>
                       </button>
@@ -583,7 +591,7 @@ export function CirclesPage() {
                     </h2>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[0.6875rem] text-muted-foreground">
-                        {selectedCircle.members.length} 位成员 · {selectedCircle.memories.length} 条知识 · 日程协作
+                        {t("circles.members").replace("{n}", String(selectedCircle.members.length))} · {t("circles.knowledgeCount").replace("{n}", String(selectedCircle.memories.length))} · {t("circles.scheduleCollab")}
                       </span>
                       {selectedCircle.aiEnabled && (
                         <Badge className="bg-primary/10 text-primary hover:bg-primary/10 text-[0.5625rem] px-1.5 py-0 h-4">
@@ -598,17 +606,17 @@ export function CirclesPage() {
                   <button
                     onClick={() => setShowPrivacyModal(true)}
                     className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.75rem] text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
-                    title="权限与隐私"
+                    title={t("circles.privacyPerm")}
                   >
                     <Shield className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">隐私</span>
+                    <span className="hidden sm:inline">{t("circles.privacyShort")}</span>
                   </button>
                   <button
                     onClick={() => setShowInviteModal(true)}
                     className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[0.75rem] text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
                   >
                     <UserPlus className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">邀请</span>
+                    <span className="hidden sm:inline">{t("circles.invite")}</span>
                   </button>
                 </div>
               </div>
@@ -693,13 +701,13 @@ export function CirclesPage() {
                               {msg.type === "ai-insight" && (
                                 <div className="flex items-center gap-1.5 mb-2">
                                   <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
-                                  <span className="text-[0.6875rem] text-amber-600" style={{ fontWeight: 600 }}>AI 洞察</span>
+                                  <span className="text-[0.6875rem] text-amber-600" style={{ fontWeight: 600 }}>{t("circles.aiInsight")}</span>
                                 </div>
                               )}
                               {msg.type === "ai-action" && (
                                 <div className="flex items-center gap-1.5 mb-2">
                                   <Zap className="h-3.5 w-3.5 text-primary" />
-                                  <span className="text-[0.6875rem] text-primary" style={{ fontWeight: 600 }}>行动提取</span>
+                                  <span className="text-[0.6875rem] text-primary" style={{ fontWeight: 600 }}>{t("circles.actionExtract")}</span>
                                 </div>
                               )}
                               <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -728,9 +736,9 @@ export function CirclesPage() {
                                         style={{ fontWeight: 500 }}
                                       >
                                         {action.accepted ? (
-                                          <><Check className="h-3 w-3" />已确认</>
+                                          <><Check className="h-3 w-3" />{t("circles.confirmed")}</>
                                         ) : (
-                                          <><ArrowRight className="h-3 w-3" />确认</>
+                                          <><ArrowRight className="h-3 w-3" />{t("circles.confirmBtn")}</>
                                         )}
                                       </button>
                                     </div>
@@ -757,7 +765,7 @@ export function CirclesPage() {
                               <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity }} className="h-1.5 w-1.5 rounded-full bg-primary" />
                               <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }} className="h-1.5 w-1.5 rounded-full bg-primary" />
                               <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }} className="h-1.5 w-1.5 rounded-full bg-primary" />
-                              <span className="ml-1.5 text-[0.75rem] text-muted-foreground">AI 正在分析对话...</span>
+                              <span className="ml-1.5 text-[0.75rem] text-muted-foreground">{t("circles.aiAnalyzing")}</span>
                             </div>
                           </div>
                         </motion.div>
@@ -773,13 +781,13 @@ export function CirclesPage() {
                             value={chatInput}
                             onChange={(e) => setChatInput(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-                            placeholder={`在「${selectedCircle.name}」中发消息...`}
+                            placeholder={t("circles.sendInCircle").replace("{name}", selectedCircle.name)}
                             className="flex-1 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/50"
                           />
                           {selectedCircle.aiEnabled && (
                             <div className="flex items-center gap-1 text-[0.625rem] text-primary/60 shrink-0">
                               <Sparkles className="h-3 w-3" />
-                              <span className="hidden sm:inline">AI 旁听中</span>
+                              <span className="hidden sm:inline">{t("circles.aiListening")}</span>
                             </div>
                           )}
                         </div>
@@ -848,7 +856,7 @@ export function CirclesPage() {
                         <input
                           value={memorySearch}
                           onChange={(e) => setMemorySearch(e.target.value)}
-                          placeholder="搜索共享知识..."
+                          placeholder={t("circles.searchKnowledge")}
                           className="flex-1 bg-transparent text-[0.8125rem] outline-none"
                         />
                       </div>
@@ -858,7 +866,7 @@ export function CirclesPage() {
                         className="rounded-xl bg-primary text-white hover:bg-primary/90 text-[0.8125rem] gap-1.5"
                       >
                         <Plus className="h-3.5 w-3.5" />
-                        录入知识
+                        {t("circles.addKnowledge")}
                       </Button>
                     </div>
 
@@ -871,7 +879,7 @@ export function CirclesPage() {
                         }`}
                         style={{ fontWeight: !memoryFilter ? 600 : 400 }}
                       >
-                        全部
+                        {t("circles.allFilter")}
                       </button>
                       {memoryCategories.map((cat) => (
                         <button
@@ -899,7 +907,7 @@ export function CirclesPage() {
                         >
                           <div className="rounded-xl border border-primary/20 bg-white p-4">
                             <div className="flex items-center justify-between mb-3">
-                              <h4 className="text-[0.875rem]" style={{ fontWeight: 600 }}>录入新知识</h4>
+                              <h4 className="text-[0.875rem]" style={{ fontWeight: 600 }}>{t("circles.newKnowledge")}</h4>
                               <button onClick={() => setShowMemoryForm(false)} className="rounded-lg p-1 text-muted-foreground hover:bg-muted/60">
                                 <X className="h-4 w-4" />
                               </button>
@@ -907,7 +915,7 @@ export function CirclesPage() {
                             <textarea
                               value={newMemory}
                               onChange={(e) => setNewMemory(e.target.value)}
-                              placeholder="输入要共享给全员和 AI 的信息，例如：Wi-Fi 密码、偏好禁忌、常用联系方式..."
+                              placeholder={t("circles.knowledgePlaceholder")}
                               className="w-full rounded-lg border border-border/50 bg-muted/20 px-3 py-2 text-[0.8125rem] outline-none focus:border-primary/40 resize-none"
                               rows={3}
                             />
@@ -934,7 +942,7 @@ export function CirclesPage() {
                                 size="sm"
                                 className="rounded-lg bg-primary text-white hover:bg-primary/90 text-[0.75rem] disabled:opacity-40"
                               >
-                                保存
+                                {t("circles.saveMem")}
                               </Button>
                             </div>
                           </div>
@@ -948,9 +956,9 @@ export function CirclesPage() {
                         <Brain className="h-4 w-4 text-primary" />
                       </div>
                       <div>
-                        <div className="text-[0.8125rem]" style={{ fontWeight: 600 }}>公共大脑 · AI 全局记忆</div>
+                        <div className="text-[0.8125rem]" style={{ fontWeight: 600 }}>{t("circles.publicBrain")}</div>
                         <p className="text-[0.75rem] text-muted-foreground mt-0.5 leading-relaxed">
-                          以下知识已注入 AI 上下文。任何成员在群聊中提问时，AI 都会自动参考这些信息作答。
+                          {t("circles.publicBrainDesc")}
                         </p>
                       </div>
                     </div>
@@ -960,7 +968,7 @@ export function CirclesPage() {
                       <div className="mb-4">
                         <div className="flex items-center gap-1.5 mb-2 px-1">
                           <Star className="h-3.5 w-3.5 text-amber-500" />
-                          <span className="text-[0.75rem] text-muted-foreground" style={{ fontWeight: 600 }}>置顶 · {pinnedMemories.length}</span>
+                          <span className="text-[0.75rem] text-muted-foreground" style={{ fontWeight: 600 }}>{t("circles.pinnedLabel")} · {pinnedMemories.length}</span>
                         </div>
                         <div className="space-y-2">
                           {pinnedMemories.map((mem, i) => (
@@ -993,10 +1001,10 @@ export function CirclesPage() {
                       <div className="flex flex-col items-center justify-center py-16 text-center">
                         <Brain className="h-12 w-12 text-muted-foreground/30 mb-3" />
                         <p className="text-[0.875rem] text-muted-foreground" style={{ fontWeight: 500 }}>
-                          {memorySearch ? "没有找到匹配的知识" : "知识库还是空的"}
+                          {memorySearch ? t("circles.noKnowledgeMatch") : t("circles.knowledgeEmpty")}
                         </p>
                         <p className="text-[0.75rem] text-muted-foreground/60 mt-1">
-                          {memorySearch ? "换个关键词试试" : "录入共享信息，让 AI 记住团队的公共知识"}
+                          {memorySearch ? t("circles.tryOtherKeyword") : t("circles.addSharedKnowledge")}
                         </p>
                       </div>
                     )}
@@ -1015,7 +1023,7 @@ export function CirclesPage() {
                   >
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-[0.9375rem]" style={{ fontWeight: 600 }}>
-                        成员 ({selectedCircle.members.length})
+                        {t("circles.membersCountLabel").replace("{n}", String(selectedCircle.members.length))}
                       </h3>
                       <Button
                         onClick={() => setShowInviteModal(true)}
@@ -1024,7 +1032,7 @@ export function CirclesPage() {
                         className="rounded-xl text-[0.8125rem] gap-1.5"
                       >
                         <UserPlus className="h-3.5 w-3.5" />
-                        邀请成员
+                        {t("circles.invite")}
                       </Button>
                     </div>
 
@@ -1041,15 +1049,15 @@ export function CirclesPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-[0.875rem]" style={{ fontWeight: 600 }}>Lifenix AI</span>
-                            <Badge className="bg-primary/10 text-primary hover:bg-primary/10 text-[0.5625rem] h-4">助手</Badge>
+                            <Badge className="bg-primary/10 text-primary hover:bg-primary/10 text-[0.5625rem] h-4">{t("circles.assistantBadge")}</Badge>
                           </div>
                           <p className="text-[0.75rem] text-muted-foreground mt-0.5">
-                            旁听对话 · 引用知识库 · 提取行动项
+                            {t("circles.aiCapabilities")}
                           </p>
                         </div>
                         <div className="flex items-center gap-1.5 text-[0.6875rem] text-emerald-600">
                           <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                          在线
+                          {t("circles.onlineStatus")}
                         </div>
                       </motion.div>
                     )}
@@ -1058,9 +1066,9 @@ export function CirclesPage() {
                     <div className="space-y-2">
                       {selectedCircle.members.map((member, i) => {
                         const roleConfig = {
-                          owner: { label: "创建者", color: "bg-amber-100 text-amber-700" },
-                          admin: { label: "管理员", color: "bg-blue-100 text-blue-700" },
-                          member: { label: "成员", color: "bg-muted text-muted-foreground" },
+                          owner: { label: t("circles.role.owner"), color: "bg-amber-100 text-amber-700" },
+                          admin: { label: t("circles.role.admin"), color: "bg-blue-100 text-blue-700" },
+                          member: { label: t("circles.role.member"), color: "bg-muted text-muted-foreground" },
                         };
                         const rc = roleConfig[member.role];
                         return (
@@ -1088,7 +1096,7 @@ export function CirclesPage() {
                               <div className="flex items-center gap-2">
                                 <span className="truncate text-[0.875rem]" style={{ fontWeight: 500 }}>
                                   {member.name}
-                                  {member.id === "m1" && <span className="text-muted-foreground">（你）</span>}
+                                  {member.id === "m1" && <span className="text-muted-foreground">{t("circles.youSuffix")}</span>}
                                 </span>
                                 <Badge className={`${rc.color} text-[0.5625rem] h-4 hover:${rc.color}`}>
                                   {rc.label}
@@ -1097,7 +1105,7 @@ export function CirclesPage() {
                               <div className="text-[0.75rem] text-muted-foreground truncate">{member.email}</div>
                             </div>
                             <div className={`text-[0.6875rem] ${member.online ? "text-emerald-600" : "text-muted-foreground/50"}`}>
-                              {member.online ? "在线" : "离线"}
+                              {member.online ? t("circles.onlineStatus") : t("circles.offlineStatus")}
                             </div>
                           </motion.div>
                         );
@@ -1106,14 +1114,14 @@ export function CirclesPage() {
 
                     {/* Space settings */}
                     <div className="mt-6 rounded-xl border border-border/50 bg-white p-4">
-                      <h4 className="text-[0.875rem] mb-3" style={{ fontWeight: 600 }}>空间设置</h4>
+                      <h4 className="text-[0.875rem] mb-3" style={{ fontWeight: 600 }}>{t("circles.spaceSettings")}</h4>
                       <div className="space-y-3">
                         <div className="flex items-center justify-between rounded-lg border border-border/30 px-4 py-3">
                           <div className="flex items-center gap-2.5">
                             <Sparkles className="h-4 w-4 text-primary" />
                             <div>
-                              <div className="text-[0.8125rem]" style={{ fontWeight: 500 }}>AI 旁听</div>
-                              <div className="text-[0.6875rem] text-muted-foreground">AI 自动分析群聊并提取行动项</div>
+                              <div className="text-[0.8125rem]" style={{ fontWeight: 500 }}>{t("circles.aiListen")}</div>
+                              <div className="text-[0.6875rem] text-muted-foreground">{t("circles.aiListenDesc")}</div>
                             </div>
                           </div>
                           <Switch
@@ -1129,8 +1137,8 @@ export function CirclesPage() {
                           <div className="flex items-center gap-2.5">
                             <Eye className="h-4 w-4 text-muted-foreground" />
                             <div>
-                              <div className="text-[0.8125rem]" style={{ fontWeight: 500 }}>知识库可见性</div>
-                              <div className="text-[0.6875rem] text-muted-foreground">所有��员可查看和编辑共享知识</div>
+                              <div className="text-[0.8125rem]" style={{ fontWeight: 500 }}>{t("circles.knowledgeVisibility")}</div>
+                              <div className="text-[0.6875rem] text-muted-foreground">{t("circles.knowledgeVisibilityDesc")}</div>
                             </div>
                           </div>
                           <Switch checked={true} />
@@ -1142,8 +1150,8 @@ export function CirclesPage() {
                           <div className="flex items-center gap-2.5">
                             <Shield className="h-4 w-4 text-primary" />
                             <div className="text-left">
-                              <div className="text-[0.8125rem] text-primary" style={{ fontWeight: 500 }}>权限与隐私设置</div>
-                              <div className="text-[0.6875rem] text-muted-foreground">日历可见性、AI 权限、极简模式</div>
+                              <div className="text-[0.8125rem] text-primary" style={{ fontWeight: 500 }}>{t("circles.privacySettingsFull")}</div>
+                              <div className="text-[0.6875rem] text-muted-foreground">{t("circles.privacySettingsDesc")}</div>
                             </div>
                           </div>
                           <ChevronRight className="h-4 w-4 text-primary" />
@@ -1162,13 +1170,13 @@ export function CirclesPage() {
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
                 <Users className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-[1.125rem] mb-2" style={{ fontWeight: 600 }}>创建你的第一个空间</h3>
+              <h3 className="text-[1.125rem] mb-2" style={{ fontWeight: 600 }}>{t("circles.createFirstTitle")}</h3>
               <p className="text-[0.875rem] text-muted-foreground leading-relaxed mb-4">
-                将家人、朋友或团队成员拉入同一个 AI 空间，共享知识、协作沟通。
+                {t("circles.createFirstDesc")}
               </p>
               <Button onClick={() => setShowCreateModal(true)} className="rounded-xl bg-primary text-white hover:bg-primary/90 gap-1.5">
                 <Plus className="h-4 w-4" />
-                创建空间
+                {t("circles.createSpace")}
               </Button>
             </div>
           </div>
@@ -1205,7 +1213,7 @@ export function CirclesPage() {
               className="fixed inset-x-4 top-[20%] z-50 mx-auto max-w-md rounded-2xl bg-white p-6 shadow-2xl sm:inset-x-auto sm:w-full"
             >
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-[1.125rem]" style={{ fontWeight: 600 }}>创建新空间</h3>
+                <h3 className="text-[1.125rem]" style={{ fontWeight: 600 }}>{t("circles.createNew")}</h3>
                 <button onClick={() => setShowCreateModal(false)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/60">
                   <X className="h-5 w-5" />
                 </button>
@@ -1213,7 +1221,7 @@ export function CirclesPage() {
 
               {/* Emoji selector */}
               <div className="mb-4">
-                <label className="text-[0.8125rem] text-muted-foreground mb-2 block" style={{ fontWeight: 500 }}>图标</label>
+                <label className="text-[0.8125rem] text-muted-foreground mb-2 block" style={{ fontWeight: 500 }}>{t("circles.iconLabel")}</label>
                 <div className="flex flex-wrap gap-2">
                   {emojiOptions.map((em) => (
                     <button
@@ -1231,18 +1239,18 @@ export function CirclesPage() {
 
               {/* Name */}
               <div className="mb-4">
-                <label className="text-[0.8125rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>空间名称</label>
+                <label className="text-[0.8125rem] text-muted-foreground mb-1.5 block" style={{ fontWeight: 500 }}>{t("circles.spaceName")}</label>
                 <Input
                   value={createName}
                   onChange={(e) => setCreateName(e.target.value)}
-                  placeholder="例如：温馨小家、产品团队..."
+                  placeholder={t("circles.spaceNamePlaceholder")}
                   className="rounded-xl"
                 />
               </div>
 
               {/* Type */}
               <div className="mb-6">
-                <label className="text-[0.8125rem] text-muted-foreground mb-2 block" style={{ fontWeight: 500 }}>空间类型</label>
+                <label className="text-[0.8125rem] text-muted-foreground mb-2 block" style={{ fontWeight: 500 }}>{t("circles.spaceType")}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(["family", "team", "project"] as const).map((t) => {
                     const tc = typeConfig[t];
@@ -1264,10 +1272,10 @@ export function CirclesPage() {
 
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setShowCreateModal(false)} className="flex-1 rounded-xl">
-                  取消
+                  {t("circles.cancelBtn")}
                 </Button>
                 <Button onClick={createCircle} disabled={!createName.trim()} className="flex-1 rounded-xl bg-primary text-white hover:bg-primary/90 disabled:opacity-40">
-                  创建空间
+                  {t("circles.createSpace")}
                 </Button>
               </div>
             </motion.div>
@@ -1294,14 +1302,14 @@ export function CirclesPage() {
               className="fixed inset-x-4 top-[25%] z-50 mx-auto max-w-sm rounded-2xl bg-white p-6 shadow-2xl sm:inset-x-auto sm:w-full"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[1.0625rem]" style={{ fontWeight: 600 }}>邀请成员</h3>
+                <h3 className="text-[1.0625rem]" style={{ fontWeight: 600 }}>{t("circles.inviteTitle")}</h3>
                 <button onClick={() => setShowInviteModal(false)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted/60">
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               <p className="text-[0.8125rem] text-muted-foreground mb-4">
-                输入邮箱地址邀请成员加入「{selectedCircle?.name}」
+                {t("circles.inviteDesc").replace("{name}", selectedCircle?.name || "")}
               </p>
 
               <div className="flex gap-2">
@@ -1328,14 +1336,14 @@ export function CirclesPage() {
                   className="mt-2 text-[0.75rem] text-emerald-600"
                   style={{ fontWeight: 500 }}
                 >
-                  邀请已发送！成员将收到加入通知。
+                  {t("circles.inviteSent")}
                 </motion.p>
               )}
 
               {/* Current members */}
               <div className="mt-5 border-t border-border/30 pt-4">
                 <div className="text-[0.75rem] text-muted-foreground mb-2" style={{ fontWeight: 500 }}>
-                  当前成员 ({selectedCircle?.members.length})
+                  {t("circles.currentMembers").replace("{n}", String(selectedCircle?.members.length || 0))}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {selectedCircle?.members.map((m) => (
@@ -1369,7 +1377,16 @@ function MemoryCard({
   onDelete: () => void;
 }) {
   const [showActions, setShowActions] = useState(false);
-  const cat = memoryCategories.find((c) => c.key === memory.category) || memoryCategories[0];
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en-US";
+  const memCats = [
+    { key: "general", label: t("circles.memCat.general"), icon: Lightbulb, color: "text-amber-600 bg-amber-50" },
+    { key: "password", label: t("circles.memCat.password"), icon: Lock, color: "text-red-600 bg-red-50" },
+    { key: "preference", label: t("circles.memCat.preference"), icon: Star, color: "text-purple-600 bg-purple-50" },
+    { key: "location", label: t("circles.memCat.location"), icon: Home, color: "text-blue-600 bg-blue-50" },
+    { key: "contact", label: t("circles.memCat.contact"), icon: AtSign, color: "text-emerald-600 bg-emerald-50" },
+  ];
+  const cat = memCats.find((c) => c.key === memory.category) || memCats[0];
 
   return (
     <motion.div
@@ -1385,7 +1402,7 @@ function MemoryCard({
         <p className="text-[0.8125rem] leading-relaxed">{memory.content}</p>
         <div className="flex items-center gap-2 mt-1.5">
           <span className="text-[0.6875rem] text-muted-foreground">
-            {memory.addedBy} · {new Date(memory.createdAt).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}
+            {memory.addedBy} · {new Date(memory.createdAt).toLocaleDateString(isEn ? "en-US" : "zh-CN", { month: "short", day: "numeric" })}
           </span>
           {memory.pinned && (
             <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
@@ -1400,14 +1417,14 @@ function MemoryCard({
               ? "text-amber-500 hover:bg-amber-50"
               : "text-muted-foreground hover:bg-muted/60"
           }`}
-          title={memory.pinned ? "取消置顶" : "置顶"}
+          title={memory.pinned ? t("circles.unpin") : t("circles.pinnedLabel")}
         >
           <Star className={`h-3.5 w-3.5 ${memory.pinned ? "fill-amber-500" : ""}`} />
         </button>
         <button
           onClick={onDelete}
           className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-red-50 transition-colors"
-          title="删除"
+          title={t("circles.deleteBtn")}
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>

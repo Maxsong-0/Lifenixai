@@ -102,13 +102,21 @@ interface TCSettings {
 /* ═══════════════════════════════════════════
    Constants
    ═══════════════════════════════════════════ */
-const MODELS: TCModel[] = [
-  { id: "tc-4o", name: "ThinkClaw 4o", provider: "ThinkClaw", description: "最强旗舰多模态模型", maxTokens: 128000, color: "from-violet-500 to-purple-600" },
-  { id: "tc-4o-mini", name: "ThinkClaw 4o-mini", provider: "ThinkClaw", description: "轻量快速，适合日常对话", maxTokens: 64000, color: "from-blue-500 to-cyan-500" },
-  { id: "tc-reason", name: "ThinkClaw Reason", provider: "ThinkClaw", description: "深度推理，逐步思考", maxTokens: 128000, color: "from-amber-500 to-orange-500" },
-  { id: "tc-code", name: "ThinkClaw Code", provider: "ThinkClaw", description: "专精代码生成与调试", maxTokens: 64000, color: "from-emerald-500 to-green-600" },
-  { id: "tc-creative", name: "ThinkClaw Creative", provider: "ThinkClaw", description: "创意写作与头脑风暴", maxTokens: 64000, color: "from-pink-500 to-rose-500" },
+const MODELS_BASE: Omit<TCModel, "description">[] = [
+  { id: "tc-4o", name: "ThinkClaw 4o", provider: "ThinkClaw", maxTokens: 128000, color: "from-violet-500 to-purple-600" },
+  { id: "tc-4o-mini", name: "ThinkClaw 4o-mini", provider: "ThinkClaw", maxTokens: 64000, color: "from-blue-500 to-cyan-500" },
+  { id: "tc-reason", name: "ThinkClaw Reason", provider: "ThinkClaw", maxTokens: 128000, color: "from-amber-500 to-orange-500" },
+  { id: "tc-code", name: "ThinkClaw Code", provider: "ThinkClaw", maxTokens: 64000, color: "from-emerald-500 to-green-600" },
+  { id: "tc-creative", name: "ThinkClaw Creative", provider: "ThinkClaw", maxTokens: 64000, color: "from-pink-500 to-rose-500" },
 ];
+
+const MODEL_DESC_KEYS: Record<string, string> = {
+  "tc-4o": "tc.modelDesc.4o",
+  "tc-4o-mini": "tc.modelDesc.4oMini",
+  "tc-reason": "tc.modelDesc.reason",
+  "tc-code": "tc.modelDesc.code",
+  "tc-creative": "tc.modelDesc.creative",
+};
 
 const DEFAULT_SETTINGS: TCSettings = {
   theme: "system",
@@ -174,16 +182,16 @@ function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
-function formatTime(d: Date) {
-  return d.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+function formatTime(d: Date, loc: string) {
+  return d.toLocaleTimeString(loc === "en-US" ? "en-US" : "zh-CN", { hour: "2-digit", minute: "2-digit" });
 }
 
-function formatDate(d: Date) {
+function formatDate(d: Date, loc: string, tFn: (k: string) => string) {
   const now = new Date();
   const diff = now.getTime() - d.getTime();
-  if (diff < 86400000 && now.getDate() === d.getDate()) return "今天";
-  if (diff < 172800000) return "昨天";
-  return d.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+  if (diff < 86400000 && now.getDate() === d.getDate()) return tFn("tc.today");
+  if (diff < 172800000) return tFn("tc.yesterday");
+  return d.toLocaleDateString(loc === "en-US" ? "en-US" : "zh-CN", { month: "short", day: "numeric" });
 }
 
 /* Mock streaming AI response */
@@ -198,6 +206,13 @@ const MOCK_RESPONSES = [
    ═══════════════════════════════════════════ */
 export function ThinkClawPage() {
   const navigate = useNavigate();
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en-US";
+
+  const MODELS: TCModel[] = MODELS_BASE.map((m) => ({
+    ...m,
+    description: t(MODEL_DESC_KEYS[m.id] || ""),
+  }));
 
   /* ── State ── */
   const [settings, setSettings] = useState<TCSettings>(loadSettings);
@@ -256,7 +271,7 @@ export function ThinkClawPage() {
   const createConversation = useCallback(() => {
     const conv: TCConversation = {
       id: uid(),
-      title: "新对话",
+      title: t("tc.newConv"),
       messages: [],
       model: selectedModel,
       createdAt: new Date(),
@@ -265,7 +280,7 @@ export function ThinkClawPage() {
     setConversations((prev) => [conv, ...prev]);
     setActiveConvId(conv.id);
     setInputValue("");
-  }, [selectedModel]);
+  }, [selectedModel, t]);
 
   const deleteConversation = useCallback((id: string) => {
     setConversations((prev) => prev.filter((c) => c.id !== id));
@@ -892,7 +907,7 @@ export function ThinkClawPage() {
                             onBlur={() => {
                               setConversations((prev) =>
                                 prev.map((c) =>
-                                  c.id === conv.id ? { ...c, title: editTitleValue || "新对话" } : c
+                                  c.id === conv.id ? { ...c, title: editTitleValue || t("tc.newConv") } : c
                                 )
                               );
                               setEditingTitle(null);
@@ -915,7 +930,7 @@ export function ThinkClawPage() {
                               </p>
                             </div>
                             <p className="text-[0.625rem] text-muted-foreground/60 mt-0.5">
-                              {formatDate(conv.updatedAt)} · {conv.messages.length} 条消息
+                              {formatDate(conv.updatedAt, locale, t)} · {t("tc.messagesCount").replace("{n}", String(conv.messages.length))}
                             </p>
                           </>
                         )}
