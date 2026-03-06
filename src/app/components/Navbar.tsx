@@ -3,14 +3,20 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { Button } from "./ui/button";
 import { useAuth } from "./AuthContext";
 import { useLanguage } from "./LanguageContext";
-import { Sparkles, Menu, X, LogOut, LayoutDashboard } from "lucide-react";
+import { Sparkles, Menu, X, LogOut, LayoutDashboard, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t, locale, setLocale } = useLanguage();
+  const isEn = locale === "en-US";
+
+  const toggleLocale = () => {
+    setLocale(isEn ? "zh-CN" : "en-US");
+  };
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeHash, setActiveHash] = useState("");
 
@@ -83,6 +89,15 @@ export function Navbar() {
 
         {/* Right side - auth buttons */}
         <div className="hidden items-center gap-3 md:flex">
+          {/* Language Toggle */}
+          <button
+            onClick={toggleLocale}
+            className="flex items-center gap-1.5 rounded-full border border-border/50 px-3 py-1.5 text-[0.8125rem] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+            title={isEn ? "切换到中文" : "Switch to English"}
+          >
+            <Globe className="h-3.5 w-3.5" />
+            <span style={{ fontWeight: 500 }}>{isEn ? "中文" : "EN"}</span>
+          </button>
           {user ? (
             <>
               <Link to="/dashboard">
@@ -176,6 +191,21 @@ export function Navbar() {
                   )}
                 </motion.div>
               ))}
+              {/* Mobile Language Toggle */}
+              <motion.div
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.05 + 4 * 0.04 }}
+              >
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={toggleLocale}
+                >
+                  <Globe className="mr-2 h-4 w-4" />
+                  {isEn ? "切换到中文" : "Switch to English"}
+                </Button>
+              </motion.div>
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}

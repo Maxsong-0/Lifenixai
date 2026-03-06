@@ -217,7 +217,7 @@ export function FocusPanel() {
         className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-6 sm:p-8 text-white"
       >
         {/* Background decoration */}
-        <div className="absolute inset-0 opacity-[0.04]">
+        <div className="absolute inset-0 opacity-[0.02]">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/3" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-1/2 -translate-x-1/4" />
         </div>
